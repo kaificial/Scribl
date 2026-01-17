@@ -1,0 +1,43 @@
+# Node modules and build
+node_modules/
+dist/
+*.local
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Java/Maven
+backend/target/
+*.log
+*.class
+*.jar
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Sensitive files
+docker-compose.yml
+backend_log.txt
+backend/backend_log.txt
+
+# Test coverage
+coverage/
+*.lcov
+
+# Build artifacts
+build/
+out/
