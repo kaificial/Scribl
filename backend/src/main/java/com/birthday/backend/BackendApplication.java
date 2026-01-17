@@ -1,5 +1,6 @@
 package com.birthday.backend;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -13,14 +14,20 @@ public class BackendApplication {
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
+	@Value("${cors.allowed-origins}")
+	private String allowedOrigins;
+
 	@Bean
 	public WebMvcConfigurer corsConfigurer() {
 		return new WebMvcConfigurer() {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
+				String[] origins = allowedOrigins.split(",");
 				registry.addMapping("/**")
-						.allowedOrigins("http://localhost:5173", "http://localhost:3000") // for Vite/React dev server
-						.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
+						.allowedOrigins(origins)
+						.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+						.allowCredentials(true)
+						.maxAge(3600);
 			}
 		};
 	}
