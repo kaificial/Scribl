@@ -1,45 +1,34 @@
-# Node modules and build
+# dependencies
 node_modules/
-dist/
-*.local
 
-# Environment files
+# production build
+dist/
+build/
+out/
+
+# environment files (never commit these!)
 .env
 .env.local
 .env.production
 .env.*.local
+*.local
 
-# Java/Maven
-backend/target/
-*.log
-*.class
-*.jar
-!backend/.mvn/wrapper/maven-wrapper.jar
-
-# IDE
+# IDE stuff
 .idea/
 .vscode/
 *.iml
 *.iws
 *.ipr
 
-# OS
+# operating system files
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 
-# Sensitive files
-docker-compose.yml
-backend_log.txt
-backend/backend_log.txt
-
-# Test coverage
+# test coverage
 coverage/
 *.lcov
 
-# Build artifacts
-build/
-out/
-.github/workflows/build-jar.yml
-.github/workflows/build-jar.yml
+# logs
+*.log
