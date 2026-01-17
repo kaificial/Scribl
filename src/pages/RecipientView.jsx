@@ -236,9 +236,6 @@ export default function RecipientView() {
                                         alt="Drawing"
                                         style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 12 }}
                                     />
-                                    <div style={{ marginTop: 20, fontSize: '1.2rem', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>
-                                        Drawn by {selectedItem.authorName || selectedItem.userName}
-                                    </div>
                                 </div>
                             ) : (
                                 <div style={{ maxWidth: 600 }}>
