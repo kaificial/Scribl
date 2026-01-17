@@ -140,10 +140,16 @@ export default function RecipientView() {
                                 left: `${item.x}%`,
                                 top: `${item.y}%`,
                                 width: item.width ? `${item.width}px` : (item.type === 'message' ? '300px' : '400px'),
-                                transform: `translate(-50%, -50%) rotate(${item.rotation || 0}deg)`,
+                                // use translate3d for gpu acceleration on ios
+                                transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation || 0}deg)`,
                                 cursor: 'zoom-in',
                                 zIndex: 1,
-                                userSelect: 'none'
+                                userSelect: 'none',
+                                // force gpu acceleration to prevent trail on ipad
+                                willChange: 'transform',
+                                WebkitTransform: `translate3d(-50%, -50%, 0) rotate(${item.rotation || 0}deg)`,
+                                backfaceVisibility: 'hidden',
+                                WebkitBackfaceVisibility: 'hidden'
                             }}
                         >
                             <div style={{ position: 'relative', width: '100%', height: '100%' }}>

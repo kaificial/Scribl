@@ -106,12 +106,18 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                 top: `${element.y}%`,
                 left: `${element.x}%`,
                 width: element.width || 200,
-                transform: `translate(-50%, -50%) rotate(${element.rotation || 0}deg)`,
+                // use translate3d for gpu acceleration on ios
+                transform: `translate3d(-50%, -50%, 0) rotate(${element.rotation || 0}deg)`,
                 cursor: 'grab',
                 zIndex: isSelected ? 100 : 10,
                 transformOrigin: 'center center',
                 userSelect: 'none',
-                touchAction: 'none'
+                touchAction: 'none',
+                // force gpu acceleration to prevent trail on ipad
+                willChange: 'transform',
+                WebkitTransform: `translate3d(-50%, -50%, 0) rotate(${element.rotation || 0}deg)`,
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden'
             }}
         >
             <div
@@ -265,10 +271,49 @@ export default function WriteMessage() {
         }
     }, [id, drawingId]);
 
-    // drawing stuff
+    // dynamically size canvas to match container for crisp drawings
+    useEffect(() => {
+        const resizeCanvas = () => {
+            if (!inkingCanvasRef.current || !canvasRef.current) return;
+
+            const container = canvasRef.current.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            // set canvas internal resolution to match display size * device pixel ratio
+            inkingCanvasRef.current.width = container.width * dpr;
+            inkingCanvasRef.current.height = container.height * dpr;
+
+            // redraw existing paths after resize
+            const ctx = inkingCanvasRef.current.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.clearRect(0, 0, inkingCanvasRef.current.width, inkingCanvasRef.current.height);
+            paths.forEach(path => {
+                ctx.beginPath();
+                ctx.strokeStyle = path.color;
+                ctx.lineWidth = path.width;
+                ctx.globalCompositeOperation = path.isEraser ? 'destination-out' : 'source-over';
+                path.points.forEach((p, i) => {
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                });
+                ctx.stroke();
+            });
+        };
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        return () => window.removeEventListener('resize', resizeCanvas);
+    }, [paths]);
+
+    // drawing stuff - render paths whenever they change
     useEffect(() => {
         if (!inkingCanvasRef.current) return;
         const ctx = inkingCanvasRef.current.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        ctx.scale(dpr, dpr);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -290,10 +335,9 @@ export default function WriteMessage() {
         if (activeTool === 'select') return;
         setIsDrawing(true);
         const rect = inkingCanvasRef.current.getBoundingClientRect();
-        const scaleX = inkingCanvasRef.current.width / rect.width;
-        const scaleY = inkingCanvasRef.current.height / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
+        // use css pixels, not canvas pixels
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         setPaths(prev => [...prev, {
             points: [{ x, y }],
             color: activeTool === 'eraser' ? 'white' : color,
@@ -305,10 +349,9 @@ export default function WriteMessage() {
     const draw = (e) => {
         if (!isDrawing) return;
         const rect = inkingCanvasRef.current.getBoundingClientRect();
-        const scaleX = inkingCanvasRef.current.width / rect.width;
-        const scaleY = inkingCanvasRef.current.height / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
+        // use css pixels, not canvas pixels
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         setPaths(prev => {
             const newPaths = [...prev];
             const currentPath = newPaths[newPaths.length - 1];
@@ -641,8 +684,6 @@ export default function WriteMessage() {
 
                     <canvas
                         ref={inkingCanvasRef}
-                        width={1000}
-                        height={1000}
                         onPointerDown={startDrawing}
                         onPointerMove={draw}
                         onPointerUp={stopDrawing}
