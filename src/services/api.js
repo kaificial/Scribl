@@ -1,77 +1,99 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_URL = 'http://localhost:8080/api/cards';
+
+const handleResponse = async (response) => {
+    if (!response.ok) {
+        const text = await response.text();
+        const error = new Error(text || `Request failed with status ${response.status}`);
+        error.response = { status: response.status, data: text };
+        throw error;
+    }
+    return response.json();
+};
 
 export const api = {
-    getCard: async (id) => {
-        const res = await fetch(`${API_URL}/cards/${id}`);
-        if (!res.ok) return null;
-        return res.json();
-    },
-
+    // Create a new card or persist an existing one
     createCard: async (id, creatorName, recipientName) => {
-        const res = await fetch(`${API_URL}/cards`, {
+        const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, creatorName, recipientName })
         });
-        return res.json();
+        return handleResponse(response);
     },
 
-    addMessage: async (id, message, recipientName) => {
-        const url = `${API_URL}/cards/${id}/messages${recipientName ? `?recipientName=${encodeURIComponent(recipientName)}` : ''}`;
-        const res = await fetch(url, {
+    // Get card details (including messages/drawings)
+    getCard: async (id) => {
+        const response = await fetch(`${API_URL}/${id}`);
+        // Handle 404 naturally without throwing if we want to support silent failure in UI
+        if (response.status === 404) return null;
+        return handleResponse(response);
+    },
+
+    // Add a text message
+    addMessage: async (cardId, messageConfig, recipientName) => {
+        const url = `${API_URL}/${cardId}/messages${recipientName ? `?recipientName=${encodeURIComponent(recipientName)}` : ''}`;
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(message)
+            body: JSON.stringify(messageConfig)
         });
-        return res.json();
+        return handleResponse(response);
     },
 
-    addDrawing: async (id, drawing, recipientName) => {
-        const url = `${API_URL}/cards/${id}/drawings${recipientName ? `?recipientName=${encodeURIComponent(recipientName)}` : ''}`;
-        const res = await fetch(url, {
+    // Add a drawing
+    addDrawing: async (cardId, drawingConfig, recipientName) => {
+        const url = `${API_URL}/${cardId}/drawings${recipientName ? `?recipientName=${encodeURIComponent(recipientName)}` : ''}`;
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(drawing)
+            body: JSON.stringify(drawingConfig)
         });
-        return res.json();
+        return handleResponse(response);
     },
 
-    updateMessage: async (id, messageId, updates) => {
-        const res = await fetch(`${API_URL}/cards/${id}/messages/${messageId}`, {
+    // Update Message
+    updateMessage: async (cardId, messageId, updates) => {
+        const response = await fetch(`${API_URL}/${cardId}/messages/${messageId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
         });
-        return res.json();
+        return handleResponse(response);
     },
 
-    updateDrawing: async (id, drawingId, updates) => {
-        const res = await fetch(`${API_URL}/cards/${id}/drawings/${drawingId}`, {
+    // Update Drawing
+    updateDrawing: async (cardId, drawingId, updates) => {
+        const response = await fetch(`${API_URL}/${cardId}/drawings/${drawingId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
         });
-        return res.json();
+        return handleResponse(response);
     },
 
-    deleteMessage: async (id, messageId) => {
-        await fetch(`${API_URL}/cards/${id}/messages/${messageId}`, {
+    // Delete Message
+    deleteMessage: async (cardId, messageId) => {
+        const response = await fetch(`${API_URL}/${cardId}/messages/${messageId}`, {
             method: 'DELETE'
         });
+        if (!response.ok) throw new Error('Failed to delete message');
     },
 
-    deleteDrawing: async (id, drawingId) => {
-        await fetch(`${API_URL}/cards/${id}/drawings/${drawingId}`, {
+    // Delete Drawing
+    deleteDrawing: async (cardId, drawingId) => {
+        const response = await fetch(`${API_URL}/${cardId}/drawings/${drawingId}`, {
             method: 'DELETE'
         });
+        if (!response.ok) throw new Error('Failed to delete drawing');
     },
 
-    updateWrappedData: async (id, wrappedData) => {
-        const res = await fetch(`${API_URL}/cards/${id}/wrapped`, {
+    // Update Wrapped Data (gift experience customization)
+    updateWrappedData: async (cardId, wrappedData) => {
+        const response = await fetch(`${API_URL}/${cardId}/wrapped`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'text/plain' },
-            body: typeof wrappedData === 'string' ? wrappedData : JSON.stringify(wrappedData)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(wrappedData)
         });
-        return res.json();
+        return handleResponse(response);
     }
 };

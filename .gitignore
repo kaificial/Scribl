@@ -41,3 +41,5 @@ coverage/
 # Build artifacts
 build/
 out/
+.github/workflows/build-jar.yml
+.github/workflows/build-jar.yml
