@@ -544,7 +544,7 @@ export default function WriteMessage() {
 
             const canvas = await html2canvas(canvasRef.current, {
                 backgroundColor: '#ffffff',
-                scale: 2,
+                scale: 3, // higher quality export
                 logging: false,
                 useCORS: true,
                 // if there is content crop to it, otherwise just capture the whole canvas
@@ -554,7 +554,7 @@ export default function WriteMessage() {
                 height: bounds ? bounds.height : undefined
             });
 
-            const dataUrl = canvas.toDataURL('image/png', 0.8);
+            const dataUrl = canvas.toDataURL('image/png', 1.0); // max png quality
             const contentJson = JSON.stringify({ elements, paths });
             const userId = localStorage.getItem('userId');
             const authorName = localStorage.getItem('userName') || "Anonymous";
