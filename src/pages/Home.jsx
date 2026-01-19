@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Send } from 'lucide-react';
 import { api } from '../services/api';
-import ParticleBackground from '../components/ParticleBackground';
+import FloatingBalloons from '../components/FloatingBalloons';
 import '../App.css';
 
 
@@ -84,7 +84,7 @@ function Home() {
             animate="visible"
             variants={containerVariants}
         >
-            <ParticleBackground />
+            <FloatingBalloons />
 
             {/* background */}
             <motion.div

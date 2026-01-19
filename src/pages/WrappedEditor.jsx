@@ -48,15 +48,17 @@ export default function WrappedEditor() {
         }
     }, [card]);
 
-    const handleSave = () => {
-        // OPTIMISTIC NAVIGATION: Go back immediately
-        nav(`/card/${id}`);
-
-        // Fire and forget (or handle error silently in background)
-        api.updateWrappedData(id, wrappedData).catch(err => {
-            console.error('Background save failed:', err);
-            // Optionally: Restore state or show a subtle notification
-        });
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const updatedCard = await api.updateWrappedData(id, wrappedData);
+            mutate(updatedCard);
+            nav(`/card/${id}`);
+        } catch (err) {
+            console.error('Save failed:', err);
+            alert('Failed to save changes. Please try again.');
+            setIsSaving(false);
+        }
     };
 
     const handleImageUpload = (field, subfield = null) => {

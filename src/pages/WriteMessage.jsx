@@ -231,7 +231,7 @@ export default function WriteMessage() {
     const canvasRef = useRef(null);
     const inkingCanvasRef = useRef(null);
 
-    const { card, isLoading: cardLoading } = useCard(id);
+    const { card, isLoading: cardLoading, mutate } = useCard(id);
     const [elements, setElements] = useState([]);
     const [history, setHistory] = useState([{ elements: [], paths: [] }]);
     const [historyIndex, setHistoryIndex] = useState(0);
@@ -566,18 +566,15 @@ export default function WriteMessage() {
             const posX = bounds ? bounds.centerX : 50;
             const posY = bounds ? bounds.centerY : 50;
 
-            // OPTIMISTIC NAVIGATION: Go back immediately
-            nav(`/card/${id}?recipient=${encodeURIComponent(recipientName || '')}`);
-
             // Background save logic
             const saveOp = drawingId
                 ? api.updateDrawing(id, drawingId, { imageData: dataUrl, contentJson, x: posX, y: posY })
                 : api.addDrawing(id, { imageData: dataUrl, contentJson, userId, authorName, x: posX, y: posY }, recipientName);
 
-            saveOp.catch(err => {
-                console.error('Background save failed:', err);
-                // Subtle feedback could be added here
-            });
+            const updatedCard = await saveOp;
+            mutate(updatedCard);
+
+            nav(`/card/${id}?recipient=${encodeURIComponent(recipientName || '')}`);
         } catch (err) {
             console.error(err);
             alert(`Failed to save: ${err.message}`);

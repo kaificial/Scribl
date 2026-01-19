@@ -12,7 +12,7 @@ export default function CardDashboard() {
     const [searchParams] = useSearchParams();
     const nav = useNavigate();
 
-    const { card, isLoading, error } = useCard(id);
+    const { card, isLoading, error, mutate } = useCard(id);
     const [copiedInvite, setCopiedInvite] = useState(false);
     const [copiedGift, setCopiedGift] = useState(false);
 
@@ -21,9 +21,10 @@ export default function CardDashboard() {
         const urlRecipient = searchParams.get('recipient');
         if (card && !card.recipientName && urlRecipient) {
             api.createCard(id, card.creatorName || "Anonymous", urlRecipient)
+                .then(updatedCard => mutate(updatedCard))
                 .catch(console.error);
         }
-    }, [id, card, searchParams]);
+    }, [id, card, searchParams, mutate]);
 
     const recipient = card?.recipientName || searchParams.get('recipient') || "Friend";
 
