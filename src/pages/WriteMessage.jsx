@@ -574,7 +574,7 @@ export default function WriteMessage() {
             const updatedCard = await saveOp;
             mutate(updatedCard);
 
-            nav(`/card/${id}?recipient=${encodeURIComponent(recipientName || '')}`);
+            nav(`/card/${id}/view?recipient=${encodeURIComponent(recipientName || '')}`);
         } catch (err) {
             console.error(err);
             alert(`Failed to save: ${err.message}`);
