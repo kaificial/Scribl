@@ -26,7 +26,9 @@ function Home() {
             : Math.random().toString(36).substr(2, 9);
 
         try {
-            const response = await api.createCard(finalId, "Anonymous", recipient);
+            const data = await api.createCard(finalId, "Anonymous", recipient);
+            // Pre-cache for instant dashboard load
+            localStorage.setItem(`scribl_card_${finalId}`, JSON.stringify(data));
             nav(`/card/${finalId}?recipient=${encodeURIComponent(recipient)}`);
         } catch (err) {
             console.error("Failed to create card:", err);
