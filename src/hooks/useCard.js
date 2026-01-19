@@ -21,6 +21,7 @@ export function useCard(id) {
 
     const [card, setCard] = useState(getCached);
     const [isLoading, setIsLoading] = useState(!card);
+    const [error, setError] = useState(null);
     const [lastId, setLastId] = useState(id);
 
     // Sync state immediately if ID changes (before useEffect)
