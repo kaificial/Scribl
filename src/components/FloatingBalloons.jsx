@@ -74,11 +74,13 @@ const FloatingBalloons = () => {
                         height: b.size * 1.2,
                         background: b.color,
                         borderRadius: '50% 50% 50% 50% / 45% 45% 55% 55%',
-                        backdropFilter: 'blur(2px)',
                         border: '1px solid rgba(255,255,255,0.1)',
                         boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                         display: 'flex',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        willChange: 'transform',
+                        WebkitTransform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden'
                     }}
                 >
                     {/* Minimal Balloon string */}
