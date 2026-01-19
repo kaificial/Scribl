@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, Type, Image as ImageIcon, X, Bold, Italic, Underline, Minus, Plus, AlignLeft, AlignCenter, AlignRight, RotateCcw, RotateCw, Pencil, Eraser } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
+import { useCard } from '../hooks/useCard';
 import html2canvas from 'html2canvas';
 import { v4 as uuidv4 } from 'uuid';
 import '../App.css';
@@ -230,12 +231,13 @@ export default function WriteMessage() {
     const canvasRef = useRef(null);
     const inkingCanvasRef = useRef(null);
 
+    const { card, isLoading: cardLoading } = useCard(id);
     const [elements, setElements] = useState([]);
     const [history, setHistory] = useState([{ elements: [], paths: [] }]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const [selectedId, setSelectedId] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [isLoading, setIsLoading] = useState(!!drawingId);
+    const [isLoading, setIsLoading] = useState(true);
 
     // some state for drawing
     const [activeTool, setActiveTool] = useState('select'); // 'select', 'pen', 'eraser'
@@ -246,31 +248,28 @@ export default function WriteMessage() {
 
     const selectedElement = elements.find(el => el.id === selectedId);
 
-    // initial load if we are in edit mode
+    // Load drawing data from card context
     useEffect(() => {
-        if (drawingId) {
-            api.getCard(id).then(card => {
-                const drawing = card.drawings.find(d => d.id === Number(drawingId));
-                if (drawing && drawing.contentJson) {
-                    try {
-                        const parsed = JSON.parse(drawing.contentJson);
-                        const els = parsed.elements || (Array.isArray(parsed) ? parsed : []);
-                        const pts = parsed.paths || [];
-                        setElements(els);
-                        setPaths(pts);
-                        setHistory([{ elements: JSON.parse(JSON.stringify(els)), paths: JSON.parse(JSON.stringify(pts)) }]);
-                        setHistoryIndex(0);
-                    } catch (e) {
-                        console.error("Failed to parse drawing content", e);
-                    }
+        if (drawingId && card) {
+            const drawing = card.drawings?.find(d => d.id === Number(drawingId));
+            if (drawing && drawing.contentJson) {
+                try {
+                    const parsed = JSON.parse(drawing.contentJson);
+                    const els = parsed.elements || (Array.isArray(parsed) ? parsed : []);
+                    const pts = parsed.paths || [];
+                    setElements(els);
+                    setPaths(pts);
+                    setHistory([{ elements: JSON.parse(JSON.stringify(els)), paths: JSON.parse(JSON.stringify(pts)) }]);
+                    setHistoryIndex(0);
+                } catch (e) {
+                    console.error("Failed to parse drawing content", e);
                 }
-                setIsLoading(false);
-            }).catch(e => {
-                console.error(e);
-                setIsLoading(false);
-            });
+            }
+            setIsLoading(false);
+        } else if (!drawingId) {
+            setIsLoading(false);
         }
-    }, [id, drawingId]);
+    }, [card, drawingId]);
 
     // dynamically size canvas to match container for crisp drawings
     useEffect(() => {

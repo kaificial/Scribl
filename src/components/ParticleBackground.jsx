@@ -10,9 +10,9 @@ const DotInteraction = () => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        const dotSpacing = 24;
-        const interactionRadius = 150;
-        const energyDecay = 0.008;
+        const dotSpacing = 36; // Increased spacing (fewer dots)
+        const interactionRadius = 120;
+        const energyDecay = 0.015; // Faster decay for performance
 
         let dots = [];
         const resizeCanvas = () => {
@@ -83,15 +83,20 @@ const DotInteraction = () => {
                 }
             });
 
-            // draw lines between dots that are close
-            activeDots.forEach((dot1, i) => {
-                for (let j = i + 1; j < activeDots.length; j++) {
+            // draw lines between dots that are close (limit count for performance)
+            const lineLimit = 150;
+            let linesDrawn = 0;
+
+            for (let i = 0; i < activeDots.length && linesDrawn < lineLimit; i++) {
+                const dot1 = activeDots[i];
+                for (let j = i + 1; j < activeDots.length && linesDrawn < lineLimit; j++) {
                     const dot2 = activeDots[j];
                     const dx = dot1.x - dot2.x;
                     const dy = dot1.y - dot2.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const distanceSq = dx * dx + dy * dy;
 
-                    if (distance < 100) {
+                    if (distanceSq < 10000) { // 100^2
+                        const distance = Math.sqrt(distanceSq);
                         const avgEnergy = (dot1.energy + dot2.energy) / 2;
                         const opacity = (1 - distance / 100) * avgEnergy * 0.12;
 
@@ -101,9 +106,10 @@ const DotInteraction = () => {
                         ctx.strokeStyle = `rgba(26, 26, 26, ${opacity})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
+                        linesDrawn++;
                     }
                 }
-            });
+            }
 
             animationRef.current = requestAnimationFrame(animate);
         };

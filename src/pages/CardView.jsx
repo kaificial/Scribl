@@ -4,6 +4,7 @@ import { ArrowLeft, Share2, Trash2, X, Pencil, Check, Settings, Gift, Edit, Eye 
 import { motion } from 'framer-motion';
 import { CakeDoodle } from '../components/HandDrawnIcons';
 import { api } from '../services/api';
+import { useCard } from '../hooks/useCard';
 import '../App.css';
 
 const InteractiveItem = ({ item, type, isOwner, onUpdate, onDelete, onEdit, isViewMode }) => {
@@ -234,41 +235,26 @@ export default function CardView() {
     const { id } = useParams();
     const nav = useNavigate();
     const [searchParams] = useSearchParams();
+    const { card: dbCard, isLoading, mutate } = useCard(id);
     const [card, setCard] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState(false);
     const currentUserId = localStorage.getItem('userId');
 
     const recipient = card?.recipientName || searchParams.get('recipient') || "Friend";
+    // Keep local card state in sync with hook data
     useEffect(() => {
-        setIsLoading(true);
-        const urlRecipient = searchParams.get('recipient');
+        if (dbCard) {
+            setCard(dbCard);
 
-        api.getCard(id)
-            .then(data => {
-                if (data) {
-                    setCard(data);
-                    // if the db card is missing a recipients name but we have it in the url, update the db
-                    if (!data.recipientName && urlRecipient) {
-                        api.createCard(id, data.creatorName || "Anonymous", urlRecipient)
-                            .then(updated => setCard(updated))
-                            .catch(console.error);
-                    }
-                } else if (urlRecipient) {
-                    api.createCard(id, "Anonymous", urlRecipient)
-                        .then(newCard => setCard(newCard))
-                        .catch(console.error);
-                } else {
-                    // setup an empty state if we cant find the card in the db yet
-                    setCard({ id, messages: [], drawings: [] });
-                }
-            })
-            .catch(err => {
-                console.error("Fetch failed:", err);
-                setCard({ id, messages: [], drawings: [] });
-            })
-            .finally(() => setIsLoading(false));
-    }, [id, searchParams]);
+            // Sync recipient if missing in DB but present in URL
+            const urlRecipient = searchParams.get('recipient');
+            if (!dbCard.recipientName && urlRecipient) {
+                api.createCard(id, dbCard.creatorName || "Anonymous", urlRecipient)
+                    .then(updated => mutate(updated))
+                    .catch(console.error);
+            }
+        }
+    }, [dbCard, id, searchParams, mutate]);
 
     const refreshCard = () => {
         api.getCard(id).then(data => data && setCard(data)).catch(console.error);
