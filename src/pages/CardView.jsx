@@ -235,41 +235,36 @@ export default function CardView() {
     const { id } = useParams();
     const nav = useNavigate();
     const [searchParams] = useSearchParams();
-    const { card: dbCard, isLoading, mutate } = useCard(id);
-    const [card, setCard] = useState(null);
+    const { card, isLoading, mutate } = useCard(id);
     const [viewMode, setViewMode] = useState(false);
     const currentUserId = localStorage.getItem('userId');
 
     const recipient = card?.recipientName || searchParams.get('recipient') || "Friend";
-    // Keep local card state in sync with hook data
-    useEffect(() => {
-        if (dbCard) {
-            setCard(dbCard);
 
-            // Sync recipient if missing in DB but present in URL
+    // Sync recipient if missing in DB but present in URL
+    useEffect(() => {
+        if (card && !card.recipientName) {
             const urlRecipient = searchParams.get('recipient');
-            if (!dbCard.recipientName && urlRecipient) {
-                api.createCard(id, dbCard.creatorName || "Anonymous", urlRecipient)
+            if (urlRecipient) {
+                api.createCard(id, card.creatorName || "Anonymous", urlRecipient)
                     .then(updated => mutate(updated))
                     .catch(console.error);
             }
         }
-    }, [dbCard, id, searchParams, mutate]);
+    }, [card, id, searchParams, mutate]);
 
     const refreshCard = () => {
-        api.getCard(id).then(data => data && setCard(data)).catch(console.error);
+        mutate(null); // Clear cache to force real refresh
     };
 
     const handleUpdate = async (itemId, type, updates) => {
-        setCard(prev => {
-            const newCard = { ...prev };
-            if (type === 'message') {
-                newCard.messages = newCard.messages.map(m => m.id === itemId ? { ...m, ...updates } : m);
-            } else {
-                newCard.drawings = newCard.drawings.map(d => d.id === itemId ? { ...d, ...updates } : d);
-            }
-            return newCard;
-        });
+        const newCard = { ...card };
+        if (type === 'message') {
+            newCard.messages = newCard.messages.map(m => m.id === itemId ? { ...m, ...updates } : m);
+        } else {
+            newCard.drawings = newCard.drawings.map(d => d.id === itemId ? { ...d, ...updates } : d);
+        }
+        mutate(newCard); // Optimistic update
 
         try {
             if (type === 'message') await api.updateMessage(id, itemId, updates);
@@ -282,22 +277,19 @@ export default function CardView() {
     const handleDelete = async (itemId, type) => {
         if (!window.confirm("Are you sure you want to delete this?")) return;
 
-        setCard(prev => {
-            const newCard = { ...prev };
-            if (type === 'message') {
-                newCard.messages = newCard.messages.filter(m => m.id !== itemId);
-            } else {
-                newCard.drawings = newCard.drawings.filter(d => d.id !== itemId);
-            }
-            return newCard;
-        });
+        const newCard = { ...card };
+        if (type === 'message') {
+            newCard.messages = newCard.messages.filter(m => m.id !== itemId);
+        } else {
+            newCard.drawings = newCard.drawings.filter(d => d.id !== itemId);
+        }
+        mutate(newCard); // Optimistic update
 
         try {
             if (type === 'message') await api.deleteMessage(id, itemId);
             else await api.deleteDrawing(id, itemId);
         } catch (err) {
             console.error("Delete failed:", err);
-            refreshCard();
             alert("Failed to delete item.");
         }
     };
