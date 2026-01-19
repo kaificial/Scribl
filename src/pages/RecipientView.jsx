@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useCard } from '../hooks/useCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ChevronLeft, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -9,21 +10,12 @@ import '../App.css';
 export default function RecipientView() {
     const { id } = useParams();
     const nav = useNavigate();
-    const [card, setCard] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { card, isLoading: loading } = useCard(id);
     const [selectedItem, setSelectedItem] = useState(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const captureRef = useRef(null);
 
-    useEffect(() => {
-        api.getCard(id).then(data => {
-            setCard(data);
-            setLoading(false);
-        }).catch(err => {
-            console.error(err);
-            setLoading(false);
-        });
-    }, [id]);
+    // Data is handled by useCard hook
 
     const handleDownload = async () => {
         if (!captureRef.current) return;
