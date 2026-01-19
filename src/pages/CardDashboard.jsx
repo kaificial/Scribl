@@ -5,41 +5,25 @@ import { Link2, PenTool, Type, Eye, ArrowLeft } from 'lucide-react';
 import { CakeDoodle, StarDoodle } from '../components/HandDrawnIcons';
 import '../App.css';
 import { api } from '../services/api';
+import { useCard } from '../hooks/useCard';
 
 export default function CardDashboard() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const nav = useNavigate();
 
-    const [card, setCard] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { card, isLoading, error } = useCard(id);
     const [copiedInvite, setCopiedInvite] = useState(false);
     const [copiedGift, setCopiedGift] = useState(false);
 
+    // Sync recipient if missing in DB but present in URL
     React.useEffect(() => {
         const urlRecipient = searchParams.get('recipient');
-
-        api.getCard(id).then(data => {
-            if (data) {
-                setCard(data);
-                // if db card is missing recipient name but we have it in url, update the db
-                if (!data.recipientName && urlRecipient) {
-                    api.createCard(id, data.creatorName || "Anonymous", urlRecipient)
-                        .then(updated => setCard(updated))
-                        .catch(console.error);
-                }
-            } else if (urlRecipient) {
-                // auto-create on join if we have the name but it's not in the db yet
-                api.createCard(id, "Anonymous", urlRecipient)
-                    .then(newCard => setCard(newCard))
-                    .catch(console.error);
-            }
-            setIsLoading(false);
-        }).catch(err => {
-            console.error(err);
-            setIsLoading(false);
-        });
-    }, [id, searchParams]);
+        if (card && !card.recipientName && urlRecipient) {
+            api.createCard(id, card.creatorName || "Anonymous", urlRecipient)
+                .catch(console.error);
+        }
+    }, [id, card, searchParams]);
 
     const recipient = card?.recipientName || searchParams.get('recipient') || "Friend";
 
@@ -57,7 +41,42 @@ export default function CardDashboard() {
         }
     };
 
-    if (isLoading) return <div className="app-container">Loading dashboard...</div>;
+
+    if (isLoading && !card) {
+        return (
+            <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+                    <div className="text-serif-italic" style={{ marginBottom: '1.5rem', fontSize: '1.2rem', color: '#666' }}>Preparing your dashboard...</div>
+                    <div style={{
+                        height: '6px',
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.05)',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                    }}>
+                        <motion.div
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 1.5,
+                                ease: "easeInOut"
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                height: '100%',
+                                width: '100%',
+                                background: 'linear-gradient(90deg, transparent, #1a1a1a, transparent)',
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="app-container">

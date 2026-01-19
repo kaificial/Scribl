@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ChevronLeft, ChevronRight, Save, Upload, X } from 'lucide-react';
 import { api } from '../services/api';
+import { useCard } from '../hooks/useCard';
 import '../App.css';
 
 export default function WrappedEditor() {
@@ -34,31 +35,28 @@ export default function WrappedEditor() {
     const slides = ['welcome', 'stats', 'hidden'];
     const slideNames = ['Welcome', 'Pictures', 'Hidden Message'];
 
-    useEffect(() => {
-        // load up the already existing wrapped data
-        api.getCard(id).then(card => {
-            if (card.wrappedData) {
-                try {
-                    const parsed = JSON.parse(card.wrappedData);
-                    setWrappedData(prev => ({ ...prev, ...parsed }));
-                } catch (e) {
-                    console.error('Failed to parse wrapped data', e);
-                }
-            }
-        }).catch(console.error);
-    }, [id]);
+    const { card, mutate } = useCard(id);
 
-    const handleSave = async () => {
-        setIsSaving(true);
-        try {
-            await api.updateWrappedData(id, wrappedData);
-            nav(`/card/${id}`);
-        } catch (err) {
-            console.error(err);
-            alert('Failed to save customization');
-        } finally {
-            setIsSaving(false);
+    useEffect(() => {
+        if (card?.wrappedData) {
+            try {
+                const parsed = JSON.parse(card.wrappedData);
+                setWrappedData(prev => ({ ...prev, ...parsed }));
+            } catch (e) {
+                console.error('Failed to parse wrapped data', e);
+            }
         }
+    }, [card]);
+
+    const handleSave = () => {
+        // OPTIMISTIC NAVIGATION: Go back immediately
+        nav(`/card/${id}`);
+
+        // Fire and forget (or handle error silently in background)
+        api.updateWrappedData(id, wrappedData).catch(err => {
+            console.error('Background save failed:', err);
+            // Optionally: Restore state or show a subtle notification
+        });
     };
 
     const handleImageUpload = (field, subfield = null) => {

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, Type, Image as ImageIcon, X, Bold, Italic, Underline, Minus, Plus, AlignLeft, AlignCenter, AlignRight, RotateCcw, RotateCw, Pencil, Eraser } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { api } from '../services/api';
 import html2canvas from 'html2canvas';
 import { v4 as uuidv4 } from 'uuid';
@@ -554,7 +555,7 @@ export default function WriteMessage() {
                 height: bounds ? bounds.height : undefined
             });
 
-            const dataUrl = canvas.toDataURL('image/png', 1.0); // max png quality
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Switch to JPEG and 0.8 quality for 10x smaller payload
             const contentJson = JSON.stringify({ elements, paths });
             const userId = localStorage.getItem('userId');
             const authorName = localStorage.getItem('userName') || "Anonymous";
@@ -564,25 +565,18 @@ export default function WriteMessage() {
             const posX = bounds ? bounds.centerX : 50;
             const posY = bounds ? bounds.centerY : 50;
 
-            if (drawingId) {
-                await api.updateDrawing(id, drawingId, {
-                    imageData: dataUrl,
-                    contentJson,
-                    x: posX,
-                    y: posY
-                });
-            } else {
-                await api.addDrawing(id, {
-                    imageData: dataUrl,
-                    contentJson,
-                    userId,
-                    authorName,
-                    x: posX,
-                    y: posY
-                }, recipientName);
-            }
-
+            // OPTIMISTIC NAVIGATION: Go back immediately
             nav(`/card/${id}?recipient=${encodeURIComponent(recipientName || '')}`);
+
+            // Background save logic
+            const saveOp = drawingId
+                ? api.updateDrawing(id, drawingId, { imageData: dataUrl, contentJson, x: posX, y: posY })
+                : api.addDrawing(id, { imageData: dataUrl, contentJson, userId, authorName, x: posX, y: posY }, recipientName);
+
+            saveOp.catch(err => {
+                console.error('Background save failed:', err);
+                // Subtle feedback could be added here
+            });
         } catch (err) {
             console.error(err);
             alert(`Failed to save: ${err.message}`);
@@ -590,7 +584,41 @@ export default function WriteMessage() {
         }
     };
 
-    if (isLoading) return <div className="app-container">Loading editor...</div>;
+    if (isLoading) {
+        return (
+            <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+                    <div className="text-serif-italic" style={{ marginBottom: '1.5rem', fontSize: '1.2rem', color: '#666' }}>Preparing your canvas...</div>
+                    <div style={{
+                        height: '6px',
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.05)',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                    }}>
+                        <motion.div
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 1.5,
+                                ease: "easeInOut"
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                height: '100%',
+                                width: '100%',
+                                background: 'linear-gradient(90deg, transparent, #1a1a1a, transparent)',
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="app-container" style={{ background: '#f8f9fa' }}>
