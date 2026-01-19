@@ -99,10 +99,37 @@ export default function GiftExperience() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-                color: 'white',
-                fontSize: '1.5rem'
+                color: 'white'
             }}>
-                Loading your gift...
+                <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center', padding: '0 20px' }}>
+                    <div className="text-serif-italic" style={{ marginBottom: '1.5rem', fontSize: '1.2rem', color: 'rgba(255,255,255,0.7)' }}>Preparing your experience...</div>
+                    <div style={{
+                        height: '6px',
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                    }}>
+                        <motion.div
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 1.5,
+                                ease: "easeInOut"
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                height: '100%',
+                                width: '100%',
+                                background: 'linear-gradient(90deg, transparent, #ffffff, transparent)',
+                            }}
+                        />
+                    </div>
+                </div>
             </div>
         );
     }

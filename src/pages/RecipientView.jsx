@@ -45,7 +45,41 @@ export default function RecipientView() {
         }
     };
 
-    if (loading) return <div className="loading-screen" style={{ background: '#ffffff', display: 'grid', placeItems: 'center', height: '100vh', fontFamily: 'var(--font-sans)' }}>Preparing your card...</div>;
+    if (loading) {
+        return (
+            <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+                    <div className="text-serif-italic" style={{ marginBottom: '1.5rem', fontSize: '1.2rem', color: '#666' }}>Preparing your card...</div>
+                    <div style={{
+                        height: '6px',
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.05)',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                    }}>
+                        <motion.div
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 1.5,
+                                ease: "easeInOut"
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                height: '100%',
+                                width: '100%',
+                                background: 'linear-gradient(90deg, transparent, #1a1a1a, transparent)',
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
     if (!card) return <div className="loading-screen" style={{ background: '#ffffff', display: 'grid', placeItems: 'center', height: '100vh', fontFamily: 'var(--font-sans)' }}>Card not found</div>;
 
     // smush messages and drawings together for the gallery

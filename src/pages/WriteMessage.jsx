@@ -312,14 +312,18 @@ export default function WriteMessage() {
     // drawing stuff - render paths whenever they change
     useEffect(() => {
         if (!inkingCanvasRef.current) return;
-        const ctx = inkingCanvasRef.current.getContext('2d');
+        const canvas = inkingCanvasRef.current;
+        const ctx = canvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
-        ctx.scale(dpr, dpr);
+
+        // Reset transform before scaling to prevent accumulation
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        ctx.clearRect(0, 0, inkingCanvasRef.current.width, inkingCanvasRef.current.height);
+        ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
         paths.forEach(path => {
+            if (path.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = path.color;
             ctx.lineWidth = path.width;
@@ -504,15 +508,13 @@ export default function WriteMessage() {
             maxY = Math.max(maxY, pxY + halfH);
         });
 
-        // for paths
+        // for paths (stored in pixel coordinates)
         paths.forEach(path => {
             path.points.forEach(p => {
-                const pxX = (p.x / 1000) * container.width;
-                const pxY = (p.y / 1000) * container.height;
-                minX = Math.min(minX, pxX);
-                minY = Math.min(minY, pxY);
-                maxX = Math.max(maxX, pxX);
-                maxY = Math.max(maxY, pxY);
+                minX = Math.min(minX, p.x);
+                minY = Math.min(minY, p.y);
+                maxX = Math.max(maxX, p.x);
+                maxY = Math.max(maxY, p.y);
             });
         });
 
