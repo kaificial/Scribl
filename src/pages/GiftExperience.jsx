@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { api } from '../services/api';
+import { useCard } from '../hooks/useCard';
 import ProgressBar from '../components/wrapped/ProgressBar';
 import WelcomeSlide from '../components/wrapped/WelcomeSlide';
 import StatsSlide from '../components/wrapped/StatsSlide';
@@ -12,7 +13,7 @@ export default function GiftExperience() {
     const { id } = useParams();
     const nav = useNavigate();
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [card, setCard] = useState(null);
+    const { card } = useCard(id);
     const [showFullCanvas, setShowFullCanvas] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [showPrompt, setShowPrompt] = useState(false);
@@ -25,9 +26,7 @@ export default function GiftExperience() {
 
     const totalSlides = 4;
 
-    useEffect(() => {
-        api.getCard(id).then(setCard).catch(console.error);
-    }, [id]);
+    // Data is handled by useCard hook
 
     // setup gsap timeline for the peel animation
     useEffect(() => {
