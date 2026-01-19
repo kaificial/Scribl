@@ -8,20 +8,16 @@ import { api } from '../services/api';
  */
 export function useCard(id) {
     const cacheKey = `scribl_card_${id}`;
-    
+
     // Initial state from localStorage if available (Stale)
-    const [card, setCard] = useState(() => {
-        const cached = localStorage.getItem(cacheKey);
-        return cached ? JSON.parse(cached) : null;
-    });
-    
-    const [isLoading, setIsLoading] = useState(!card);
+    const [card, setCard] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchCard = async (silent = false) => {
         if (!id) return;
         if (!silent) setIsLoading(true);
-        
+
         try {
             const data = await api.getCard(id);
             if (data) {
@@ -39,23 +35,32 @@ export function useCard(id) {
     };
 
     useEffect(() => {
-        fetchCard();
-        
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            setCard(JSON.parse(cached));
+            setIsLoading(false);
+        } else {
+            setCard(null);
+            setIsLoading(true);
+        }
+
+        fetchCard(!!cached); // fetch silently if we have cache
+
         // Listen for cache invalidation events (useful for cross-page sync)
         const handleStorage = (e) => {
             if (e.key === cacheKey && e.newValue) {
                 setCard(JSON.parse(e.newValue));
             }
         };
-        
+
         window.addEventListener('storage', handleStorage);
         return () => window.removeEventListener('storage', handleStorage);
     }, [id]);
 
-    return { 
-        card, 
-        isLoading, 
-        error, 
+    return {
+        card,
+        isLoading,
+        error,
         refresh: () => fetchCard(true),
         mutate: (newData) => {
             setCard(newData);
