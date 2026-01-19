@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, Type, Image as ImageIcon, X, Bold, Italic, Underline, Minus, Plus, AlignLeft, AlignCenter, AlignRight, RotateCcw, RotateCw, Pencil, Eraser } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import html2canvas from 'html2canvas';
 import { v4 as uuidv4 } from 'uuid';
@@ -622,6 +622,57 @@ export default function WriteMessage() {
 
     return (
         <div className="app-container" style={{ background: '#f8f9fa' }}>
+            {/* SAVING OVERLAY */}
+            <AnimatePresence>
+                {isSaving && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 2000,
+                            background: 'rgba(255,255,255,0.8)',
+                            backdropFilter: 'blur(10px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <div style={{ width: '100%', maxWidth: '300px', textAlign: 'center' }}>
+                            <div className="text-serif-italic" style={{ marginBottom: '1.5rem', fontSize: '1.2rem', color: '#1a1a1a' }}>Sending to canvas...</div>
+                            <div style={{
+                                height: '6px',
+                                width: '100%',
+                                background: 'rgba(0,0,0,0.05)',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                            }}>
+                                <motion.div
+                                    initial={{ x: '-100%' }}
+                                    animate={{ x: '100%' }}
+                                    transition={{
+                                        repeat: Infinity,
+                                        duration: 1.5,
+                                        ease: "easeInOut"
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        height: '100%',
+                                        width: '100%',
+                                        background: 'linear-gradient(90deg, transparent, #1a1a1a, transparent)',
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* header section */}
             <div style={{ position: 'fixed', top: 20, left: 20, right: 20, zIndex: 1000, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button
@@ -662,7 +713,7 @@ export default function WriteMessage() {
                         fontSize: '0.9rem'
                     }}
                 >
-                    {isSaving ? 'Saving...' : 'Finish Message'}
+                    Finish Message
                     <Send size={18} />
                 </button>
             </div>
