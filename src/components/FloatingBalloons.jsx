@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 
-const FloatingBalloons = () => {
+const FloatingBalloons = memo(() => {
     // Minimal color palette: Gold, Yellow, Black, White, Grey/Silver
     const balloonColors = [
         'rgba(212, 175, 55, 0.7)',  // Gold
@@ -37,6 +37,7 @@ const FloatingBalloons = () => {
                 delay: Math.random() * 6, // uniform early start
                 duration: Math.random() * (30 - 18) + 18,
                 opacity: Math.random() * (0.8 - 0.3) + 0.3,
+                sway: Math.random() > 0.5 ? 4 : -4
             };
         });
     }, []);
@@ -57,7 +58,7 @@ const FloatingBalloons = () => {
                         y: '-20vh',
                         x: [
                             `${b.left}vw`,
-                            `${b.left + (Math.random() > 0.5 ? 4 : -4)}vw`,
+                            `${b.left + b.sway}vw`,
                             `${b.left}vw`
                         ],
                         opacity: [0, b.opacity, b.opacity, 0]
@@ -105,6 +106,6 @@ const FloatingBalloons = () => {
             ))}
         </div>
     );
-};
+});
 
 export default FloatingBalloons;

@@ -128,7 +128,7 @@ function Home() {
                 </motion.h1>
 
                 <motion.p className="hero-subtitle" variants={itemVariants}>
-                    For ppl who are tired of messy group chats for birthdays. Just a project I made to help people stay close, even when they're hundreds of kilometers apart.
+                    For people who want to give someone a personalized birthday experience. Just a project I made to help people stay close, even when they're hundreds of kilometers apart.
                 </motion.p>
 
                 {/* search bar for making a card */}
