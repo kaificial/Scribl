@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import '../App.css';
 
 const DraggableElement = ({ element, updateElement, removeElement, isSelected, onSelect, activeTool }) => {
+    const [dragging, setDragging] = useState(false);
 
     // manual drag logic for moving stuff
     const handleMoveStart = (e) => {
@@ -16,6 +17,7 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
 
         e.preventDefault();
         onSelect(e);
+        setDragging(true);
 
         const startX = e.clientX;
         const startY = e.clientY;
@@ -33,12 +35,15 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
             const newX = startElX + (dx / container.width) * 100;
             const newY = startElY + (dy / container.height) * 100;
 
-            updateElement(element.id, { x: newX, y: newY });
+            updateElement(element.id, { x: newX, y: newY }, true);
         };
 
         const onUp = () => {
+            setDragging(false);
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
+            // push to history only when done
+            updateElement(element.id, {});
         };
 
         window.addEventListener('pointermove', onMove);
@@ -48,6 +53,7 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
     const handleResizeStart = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        setDragging(true);
 
         const startWidth = element.width || 200;
         const startX = e.clientX;
@@ -57,12 +63,15 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
             moveEvent.stopPropagation();
             const delta = moveEvent.clientX - startX;
             const newWidth = Math.max(50, startWidth + delta);
-            updateElement(element.id, { width: newWidth });
+            updateElement(element.id, { width: newWidth }, true);
         };
 
         const onUp = () => {
+            setDragging(false);
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
+            // push to history only when done
+            updateElement(element.id, {});
         };
 
         window.addEventListener('pointermove', onMove);
@@ -72,10 +81,12 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
     const handleRotateStart = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        setDragging(true);
 
-        const rect = e.target.parentElement.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+        const canvas = document.getElementById('designer-canvas').getBoundingClientRect();
+        // The element's center in SCREEN coordinates
+        const centerX = canvas.left + (element.x / 100) * canvas.width;
+        const centerY = canvas.top + (element.y / 100) * canvas.height;
 
         const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
         const startRotation = element.rotation || 0;
@@ -85,24 +96,32 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
             moveEvent.stopPropagation();
             const currentAngle = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
             const deg = (currentAngle - startAngle) * (180 / Math.PI);
-            updateElement(element.id, { rotation: startRotation + deg });
+            // round to 1 decimal place to prevent micro-jitter
+            const finalRotation = Math.round((startRotation + deg) * 10) / 10;
+            updateElement(element.id, { rotation: finalRotation }, true);
         };
 
         const onUp = () => {
+            setDragging(false);
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
+            // push to history only when done
+            updateElement(element.id, {});
         };
 
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
     };
 
+    const frameClass = element.frame ? `frame-${element.frame}` : '';
+    const styleClass = element.msgStyle ? `msg-style-${element.msgStyle}` : '';
+
     return (
         <div
-            className="draggable-item"
+            className={`draggable-item ${frameClass} ${styleClass} ${isSelected ? 'selected' : ''} ${dragging ? 'dragging' : ''}`}
             data-id={element.id}
             onPointerDown={handleMoveStart}
-            onClick={(e) => { e.stopPropagation(); onSelect(e); }}
+            onClick={(e) => { e.stopPropagation(); !dragging && onSelect(e); }}
             style={{
                 position: 'absolute',
                 top: `${element.y}%`,
@@ -126,10 +145,10 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                 className="draggable-content-wrapper"
                 style={{
                     position: 'relative',
-                    border: isSelected ? '1px dashed #4b89dc' : '1px solid transparent',
+                    border: (isSelected && !element.frame && !element.msgStyle) ? '1px dashed #4b89dc' : '1px solid transparent',
                     padding: 0,
                     height: '100%',
-                    borderRadius: 4,
+                    borderRadius: (element.msgStyle === 'modern') ? 12 : 4,
                     transition: 'border-color 0.2s',
                     overflow: 'visible'
                 }}
@@ -238,7 +257,7 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                             onInput={(e) => updateElement(element.id, { content: e.target.innerHTML }, true)}
                             onBlur={(e) => updateElement(element.id, { content: e.target.innerHTML })}
                             style={{
-                                fontFamily: 'var(--font-serif)',
+                                fontFamily: element.fontFamily || 'var(--font-serif)',
                                 fontSize: `${element.fontSize || 20}px`,
                                 color: element.color || '#1a1a1a',
                                 outline: 'none',
@@ -249,7 +268,7 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                                 textAlign: element.textAlign || 'center',
                                 lineHeight: 1.4,
                                 cursor: 'text',
-                                padding: 10
+                                padding: element.msgStyle ? 0 : 10
                             }}
                         />
                     ) : (
@@ -471,7 +490,8 @@ export default function WriteMessage() {
             x: 50, y: 50,
             color: '#1a1a1a',
             width: 250,
-            rotation: 0,
+            // organic random rotation (-4 to 4 deg)
+            rotation: (Math.random() * 8) - 4,
             fontSize: 24,
             textAlign: 'center'
         };
@@ -494,7 +514,8 @@ export default function WriteMessage() {
                     src: f.target.result,
                     x: 50, y: 50,
                     width: 250,
-                    rotation: 0
+                    // organic random rotation (-4 to 4 deg)
+                    rotation: (Math.random() * 8) - 4
                 };
                 const newEls = [...elements, newEl];
                 setElements(newEls);
@@ -988,63 +1009,101 @@ export default function WriteMessage() {
 
                     <div style={{ width: 1, height: 24, background: '#eee' }} />
 
-                    {activeTool === 'select' && selectedElement && selectedElement.type === 'text' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ display: 'flex', gap: 5 }}>
-                                <button onMouseDown={(e) => handleToolbarClick(e, 'bold')} className="toolbar-btn"><Bold size={16} /></button>
-                                <button onMouseDown={(e) => handleToolbarClick(e, 'italic')} className="toolbar-btn"><Italic size={16} /></button>
-                                <button onMouseDown={(e) => handleToolbarClick(e, 'underline')} className="toolbar-btn"><Underline size={16} /></button>
+
+                    {/* SELECTION-BASED TOOLS (Design, Formatting, Crop) */}
+                    {activeTool === 'select' && selectedElement && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+
+                            {/* 1. Design/Style Section */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', borderRight: '1px solid #eee' }}>
+                                <div style={{ fontSize: '0.65rem', color: '#999', textTransform: 'uppercase', fontWeight: 600 }}>Design</div>
+                                <div style={{ display: 'flex', gap: 3, background: '#f0f0f0', padding: 3, borderRadius: 20 }}>
+                                    {selectedElement.type === 'text' ? (
+                                        ['none', 'sticky', 'letter', 'modern'].map(s => (
+                                            <button
+                                                key={s}
+                                                onClick={() => updateElement(selectedId, { msgStyle: s === 'none' ? null : s })}
+                                                style={{
+                                                    padding: '3px 8px', fontSize: '0.65rem', border: 'none', borderRadius: 15,
+                                                    background: (selectedElement.msgStyle || 'none') === s ? 'white' : 'transparent',
+                                                    boxShadow: (selectedElement.msgStyle || 'none') === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                                    cursor: 'pointer', textTransform: 'capitalize'
+                                                }}
+                                            >
+                                                {s}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        ['none', 'polaroid', 'modern', 'tape'].map(f => (
+                                            <button
+                                                key={f}
+                                                onClick={() => updateElement(selectedId, { frame: f === 'none' ? null : f })}
+                                                style={{
+                                                    padding: '3px 8px', fontSize: '0.65rem', border: 'none', borderRadius: 15,
+                                                    background: (selectedElement.frame || 'none') === f ? 'white' : 'transparent',
+                                                    boxShadow: (selectedElement.frame || 'none') === f ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                                    cursor: 'pointer', textTransform: 'capitalize'
+                                                }}
+                                            >
+                                                {f}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 5 }}>
-                                <button onClick={() => changeTextAlign('left')} className="toolbar-btn" style={{ background: selectedElement.textAlign === 'left' ? 'white' : 'none', boxShadow: selectedElement.textAlign === 'left' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', borderRadius: 4 }}><AlignLeft size={16} /></button>
-                                <button onClick={() => changeTextAlign('center')} className="toolbar-btn" style={{ background: selectedElement.textAlign === 'center' ? 'white' : 'none', boxShadow: selectedElement.textAlign === 'center' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', borderRadius: 4 }}><AlignCenter size={16} /></button>
-                                <button onClick={() => changeTextAlign('right')} className="toolbar-btn" style={{ background: selectedElement.textAlign === 'right' ? 'white' : 'none', boxShadow: selectedElement.textAlign === 'right' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', borderRadius: 4 }}><AlignRight size={16} /></button>
-                            </div>
-                            <div style={{ width: 1, height: 20, background: '#eee', margin: '0 5px' }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <button onClick={() => changeFontSize(-2)} className="toolbar-btn"><Minus size={14} /></button>
-                                <input
-                                    type="text"
-                                    value={selectedElement.fontSize === undefined ? 24 : selectedElement.fontSize}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val === "" || /^\d+$/.test(val)) {
-                                            updateElement(selectedElement.id, { fontSize: val === "" ? "" : parseInt(val) }, true);
-                                        }
-                                    }}
-                                    onBlur={(e) => {
-                                        if (e.target.value === "" || parseInt(e.target.value) < 1) {
-                                            updateElement(selectedElement.id, { fontSize: 24 });
-                                        }
-                                    }}
-                                    style={{ width: 45, border: '1px solid #ddd', borderRadius: 4, padding: '2px 5px', textAlign: 'center' }}
-                                />
-                                <button onClick={() => changeFontSize(2)} className="toolbar-btn"><Plus size={14} /></button>
-                            </div>
+
+                            {/* 2. Type-Specific Actions (Formatting or Crop) */}
+                            {selectedElement.type === 'text' ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <select
+                                        value={selectedElement.fontFamily || 'var(--font-serif)'}
+                                        onChange={(e) => updateElement(selectedId, { fontFamily: e.target.value })}
+                                        style={{ fontSize: '0.75rem', border: '1px solid #ddd', borderRadius: 6, padding: '3px 6px', outline: 'none', background: 'white' }}
+                                    >
+                                        <option value="var(--font-serif)">Classic</option>
+                                        <option value="var(--font-sans)">Clean</option>
+                                        <option value="'Dancing Script', cursive">Cursive</option>
+                                        <option value="'Indie Flower', cursive">Handwritten</option>
+                                        <option value="'Great Vibes', cursive">Sexy</option>
+                                    </select>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button onMouseDown={(e) => handleToolbarClick(e, 'bold')} className="toolbar-btn" style={{ width: 30, height: 30 }}><Bold size={14} /></button>
+                                        <button onMouseDown={(e) => handleToolbarClick(e, 'italic')} className="toolbar-btn" style={{ width: 30, height: 30 }}><Italic size={14} /></button>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button onClick={() => changeTextAlign('left')} className="toolbar-btn" style={{ width: 30, height: 30, background: selectedElement.textAlign === 'left' ? 'white' : 'none' }}><AlignLeft size={14} /></button>
+                                        <button onClick={() => changeTextAlign('center')} className="toolbar-btn" style={{ width: 30, height: 30, background: (selectedElement.textAlign || 'center') === 'center' ? 'white' : 'none' }}><AlignCenter size={14} /></button>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <button onClick={() => changeFontSize(-2)} className="toolbar-btn" style={{ width: 26, height: 26 }}><Minus size={12} /></button>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, minWidth: 20, textAlign: 'center' }}>{selectedElement.fontSize || 24}</span>
+                                        <button onClick={() => changeFontSize(2)} className="toolbar-btn" style={{ width: 26, height: 26 }}><Plus size={12} /></button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setImageToCrop({ src: selectedElement.src, id: selectedElement.id })}
+                                    className="toolbar-btn"
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', width: 'auto', background: 'white', border: '1px solid #eee', borderRadius: 20 }}
+                                >
+                                    <ImageIcon size={16} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Modify Crop</span>
+                                </button>
+                            )}
                         </div>
                     )}
 
-                    {activeTool === 'select' && selectedElement && selectedElement.type === 'image' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <button
-                                onClick={() => setImageToCrop({ src: selectedElement.src, id: selectedElement.id })}
-                                className="toolbar-btn"
-                                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', width: 'auto' }}
-                            >
-                                <ImageIcon size={16} />
-                                <span style={{ fontSize: '0.8rem' }}>Modify Crop</span>
-                            </button>
-                        </div>
-                    )}
+                    <div style={{ width: 1, height: 24, background: '#eee' }} />
 
+                    {/* BRUSH TOOLS section */}
                     {(activeTool === 'pen' || activeTool === 'eraser') && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-                                {['#1a1a1a', '#FF5252', '#448AFF', '#66BB6A', '#FFD740', '#AB47BC', '#FF9800', '#00BCD4', '#E91E63', '#8BC34A'].map(c => (
+                                {['#1a1a1a', '#FF5252', '#448AFF', '#66BB6A', '#FFD740'].map(c => (
                                     <div
                                         key={c}
                                         onClick={() => setColor(c)}
-                                        style={{ width: 14, height: 14, borderRadius: '50%', background: c, border: '1px solid #ddd', cursor: 'pointer', boxShadow: color === c ? '0 0 0 2px white, 0 0 0 3px #1a1a1a' : 'none' }}
+                                        style={{ width: 14, height: 14, borderRadius: '50%', background: c, border: `2px solid ${color === c ? 'white' : 'transparent'}`, boxShadow: color === c ? '0 0 0 1px #ddd' : 'none', cursor: 'pointer' }}
                                     />
                                 ))}
                             </div>
@@ -1059,12 +1118,15 @@ export default function WriteMessage() {
 
                     <div style={{ width: 1, height: 24, background: '#eee' }} />
 
+                    {/* GLOBAL TOOLS (Undo/Redo) */}
                     <div style={{ display: 'flex', gap: 5 }}>
-                        <button onClick={undo} disabled={historyIndex <= 0} className="toolbar-btn" style={{ opacity: historyIndex <= 0 ? 0.3 : 1 }}><RotateCcw size={18} /></button>
-                        <button onClick={redo} disabled={historyIndex >= history.length - 1} className="toolbar-btn" style={{ opacity: historyIndex >= history.length - 1 ? 0.3 : 1 }}><RotateCw size={18} /></button>
+                        <button onClick={undo} disabled={historyIndex <= 0} className="toolbar-btn" style={{ opacity: historyIndex <= 0 ? 0.3 : 1 }} title="Undo"><RotateCcw size={18} /></button>
+                        <button onClick={redo} disabled={historyIndex >= history.length - 1} className="toolbar-btn" style={{ opacity: historyIndex >= history.length - 1 ? 0.3 : 1 }} title="Redo"><RotateCw size={18} /></button>
                     </div>
+
                 </div>
             </div>
+
             {/* footer info */}
             <div className="no-export" style={{ position: 'absolute', bottom: 15, left: 0, right: 0, textAlign: 'center', fontSize: '0.7rem', color: '#aaa', zIndex: 10, pointerEvents: 'none' }}>
                 <span style={{ pointerEvents: 'auto' }}>

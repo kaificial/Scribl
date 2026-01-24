@@ -534,20 +534,12 @@ export default function CardView() {
                             fontWeight: 600
                         }}
                     >
-                        <Sparkles size={18} color="#d4af37" />
+                        <Edit size={18} color="#d4af37" />
                         <span>Customize the Final Experience</span>
                     </motion.button>
 
                     <motion.button
                         onClick={() => nav(`/gift/${id}`)}
-                        animate={{
-                            scale: [1, 1.02, 1],
-                        }}
-                        transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         style={{

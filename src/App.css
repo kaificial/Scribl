@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Great+Vibes&family=Indie+Flower&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
 /* hero */
 .hero-container {
   position: relative;
@@ -413,4 +415,148 @@ input[type=number]::-webkit-outer-spin-button {
     fill-opacity: 0.2;
     opacity: 0.2;
   }
+}
+
+/* Global lift/hover effects for elements */
+.draggable-item {
+  transition: box-shadow 0.25s ease !important;
+}
+
+.draggable-item:hover {
+  z-index: 150 !important;
+}
+
+.draggable-item.selected {
+  z-index: 160 !important;
+}
+
+.draggable-item.dragging {
+  transition: none !important;
+  z-index: 200 !important;
+}
+
+.draggable-content-wrapper {
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.draggable-item:hover .draggable-content-wrapper {
+  transform: scale(1.02) !important;
+}
+
+.draggable-item.selected .draggable-content-wrapper {
+  transform: scale(1.02) !important;
+}
+
+.draggable-item.dragging .draggable-content-wrapper {
+  transition: none !important;
+}
+
+/* Image Frames */
+.frame-polaroid {
+  background: #fff !important;
+  padding: 12px 12px 45px 12px !important;
+  /* Multi-layered "stack" shadow for depth */
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.08),
+    0 15px 40px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+  border-radius: 2px !important;
+  position: relative !important;
+}
+
+.frame-polaroid::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: url("https://www.transparenttextures.com/patterns/cardboard-flat.png") !important;
+  opacity: 0.03 !important;
+  pointer-events: none !important;
+}
+
+.frame-modern {
+  border: 10px solid white !important;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 8px !important;
+}
+
+.frame-tape {
+  position: relative !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+}
+
+.frame-tape::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -18px !important;
+  left: 50% !important;
+  transform: translateX(-50%) rotate(-1deg) !important;
+  width: 100px !important;
+  height: 30px !important;
+  background: rgba(227, 213, 184, 0.7) !important;
+  backdrop-filter: blur(2px) !important;
+  /* Torn edge look with mask */
+  mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+  z-index: 10 !important;
+}
+
+/* Message Styles */
+.msg-style-sticky {
+  background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%) !important;
+  box-shadow:
+    3px 6px 15px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  border: none !important;
+  padding: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  /* Curled corner effect */
+  clip-path: polygon(0% 0%, 100% 0%, 100% 85%, 85% 100%, 0% 100%) !important;
+}
+
+.msg-style-sticky::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 15% !important;
+  height: 15% !important;
+  background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.05) 100%) !important;
+  pointer-events: none !important;
+}
+
+.msg-style-sticky .rich-text-editor {
+  color: #5d4037 !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+.msg-style-letter {
+  background: #fdf6e3 !important;
+  background-image: url("https://www.transparenttextures.com/patterns/old-map.png") !important;
+  border: none !important;
+  padding: 30px !important;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.03) !important;
+  /* Deckled edge look */
+  clip-path: polygon(0% 2%, 5% 0%, 10% 2%, 15% 0%, 20% 2%, 25% 0%, 30% 2%, 35% 0%, 40% 2%, 45% 0%, 50% 2%, 55% 0%, 60% 2%, 65% 0%, 70% 2%, 75% 0%, 80% 2%, 85% 0%, 90% 2%, 95% 0%, 100% 2%,
+      100% 100%, 0% 100%) !important;
+}
+
+.msg-style-modern {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.05),
+    inset 0 0 20px rgba(255, 255, 255, 0.2) !important;
+  padding: 24px !important;
+  border-radius: 24px !important;
 }
