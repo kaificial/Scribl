@@ -300,6 +300,7 @@ export default function WriteMessage() {
     const [selectedId, setSelectedId] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isPenActive, setIsPenActive] = useState(false); // New state to track if a pen (iPad Pencil) is being used
 
     // some state for drawing
     const [activeTool, setActiveTool] = useState('select'); // 'select', 'pen', 'eraser'
@@ -416,9 +417,24 @@ export default function WriteMessage() {
 
     const startDrawing = (e) => {
         if (activeTool === 'select') return;
+
+        // Palm Rejection logic
+        // If we detect a pen, we set pen active and ignore touch events
+        // If it's a touch event and pen is active, ignore it (palm rejection)
+        if (e.pointerType === 'pen') {
+            setIsPenActive(true);
+        } else if (e.pointerType === 'touch' && isPenActive) {
+            return;
+        }
+
+        // Ignore secondary touches (multi-touch palm)
+        if (!e.isPrimary) return;
+
+        // Optional: Ignore low pressure touches if supported
+        if (e.pointerType === 'pen' && e.pressure !== undefined && e.pressure < 0.05 && e.pressure > 0) return;
+
         setIsDrawing(true);
         const rect = inkingCanvasRef.current.getBoundingClientRect();
-        // use css pixels, not canvas pixels
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         setPaths(prev => [...prev, {
@@ -431,19 +447,30 @@ export default function WriteMessage() {
 
     const draw = (e) => {
         if (!isDrawing) return;
+
+        // Palm Rejection: skip if touch and pen is active
+        if (e.pointerType === 'touch' && isPenActive) return;
+        if (!e.isPrimary) return;
+
         const rect = inkingCanvasRef.current.getBoundingClientRect();
-        // use css pixels, not canvas pixels
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         setPaths(prev => {
             const newPaths = [...prev];
             const currentPath = newPaths[newPaths.length - 1];
-            currentPath.points.push({ x, y });
+            if (currentPath) {
+                currentPath.points.push({ x, y });
+            }
             return newPaths;
         });
     };
 
-    const stopDrawing = () => {
+    const stopDrawing = (e) => {
+        if (e && e.pointerType === 'pen') {
+            // Give it a small delay before allowing touch again to prevent accidental taps
+            setTimeout(() => setIsPenActive(false), 300);
+        }
+
         if (isDrawing) {
             setIsDrawing(false);
             addToHistory(elements, paths);

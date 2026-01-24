@@ -560,3 +560,53 @@ input[type=number]::-webkit-outer-spin-button {
   padding: 24px !important;
   border-radius: 24px !important;
 }
+
+/* Mobile Responsiveness & iPad Fixes */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .glass-nav {
+    padding: 1rem 1.5rem;
+  }
+
+  .content-wrapper {
+    padding: 1rem;
+    height: auto;
+    min-height: 90vh;
+  }
+
+  #designer-canvas {
+    border-radius: 20px !important;
+  }
+
+  .glass-panel {
+    width: 95%;
+    padding: 8px !important;
+    gap: 8px !important;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 20px !important;
+  }
+
+  .toolbar-btn {
+    padding: 6px !important;
+  }
+
+  .app-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Palm Rejection Helper and Scroll Optimization */
+#designer-canvas {
+  touch-action: pan-y pinch-zoom;
+  /* Allow vertical scroll and zoom on the canvas container */
+}
+
+/* Only block scrolling on the actual inking surface when tools are active */
+canvas[style*="pointer-events: auto"] {
+  touch-action: none;
+}
