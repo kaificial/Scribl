@@ -693,7 +693,7 @@ export default function WriteMessage() {
                     .sort((a, b) => b.id - a.id)[0];
 
                 if (newDrawing) {
-                    nav(`/card/${id}/edit?drawingId=${newDrawing.id}&recipient=${encodeURIComponent(recipientName || '')}`, { replace: true });
+                    nav(`/card/${id}/write?drawingId=${newDrawing.id}&recipient=${encodeURIComponent(recipientName || '')}`, { replace: true });
                 }
             }
 

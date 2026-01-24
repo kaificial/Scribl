@@ -40,8 +40,8 @@ const AnimatedBirthday = ({ name, delay = 0, isCapturing = false }) => {
                 fontFamily: '"Great Vibes", cursive',
                 opacity: 0.2
             }}>
-                <div style={{ fontSize: '75px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>Happy Birthday</div>
-                <div style={{ fontSize: '90px', whiteSpace: 'nowrap', lineHeight: 1.2, marginTop: '-5px' }}>{name}!</div>
+                <div style={{ fontSize: '56px', whiteSpace: 'nowrap', lineHeight: 1.1, fontFamily: '"Great Vibes", cursive' }}>Happy Birthday</div>
+                <div style={{ fontSize: '72px', whiteSpace: 'nowrap', lineHeight: 1.1, marginTop: '-10px', fontFamily: '"Great Vibes", cursive' }}>{name}!</div>
             </div>
         );
     }
@@ -71,7 +71,7 @@ const AnimatedBirthday = ({ name, delay = 0, isCapturing = false }) => {
                     className="cursive-write-text"
                     style={{
                         fontFamily: '"Great Vibes", cursive',
-                        fontSize: '110px',
+                        fontSize: '85px',
                     }}
                 >
                     Happy Birthday
@@ -86,7 +86,7 @@ const AnimatedBirthday = ({ name, delay = 0, isCapturing = false }) => {
                     className="cursive-write-text"
                     style={{
                         fontFamily: '"Great Vibes", cursive',
-                        fontSize: '130px',
+                        fontSize: '105px',
                         animationDelay: '1.2s'
                     }}
                 >
