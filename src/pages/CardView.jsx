@@ -1,11 +1,101 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Share2, Trash2, X, Pencil, Check, Settings, Gift, Edit, Eye } from 'lucide-react';
+import { ArrowLeft, Share2, Trash2, X, Pencil, Check, Settings, Gift, Edit, Eye, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CakeDoodle } from '../components/HandDrawnIcons';
 import { api } from '../services/api';
 import { useCard } from '../hooks/useCard';
+import CelebrationBalloons from '../components/CelebrationBalloons';
 import '../App.css';
+
+const AnimatedBirthday = ({ name, delay = 0, isCapturing = false }) => {
+    const [show, setShow] = useState(delay === 0 || isCapturing);
+
+    useEffect(() => {
+        if (!isCapturing && delay > 0) {
+            const timer = setTimeout(() => setShow(true), delay);
+            return () => clearTimeout(timer);
+        }
+    }, [delay, isCapturing]);
+
+    if (!show) return null;
+
+    if (isCapturing) {
+        return (
+            <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '60vw',
+                maxWidth: '800px',
+                pointerEvents: 'none',
+                zIndex: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                color: '#666',
+                fontFamily: '"Great Vibes", cursive',
+                opacity: 0.2
+            }}>
+                <div style={{ fontSize: '75px', whiteSpace: 'nowrap', lineHeight: 1.2 }}>Happy Birthday</div>
+                <div style={{ fontSize: '90px', whiteSpace: 'nowrap', lineHeight: 1.2, marginTop: '-5px' }}>{name}!</div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '60vw',
+            maxWidth: '800px',
+            pointerEvents: 'none',
+            zIndex: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'visible'
+        }}>
+            <svg viewBox="0 0 1000 150" style={{ width: '100%', overflow: 'visible' }}>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="cursive-write-text"
+                    style={{
+                        fontFamily: '"Great Vibes", cursive',
+                        fontSize: '110px',
+                    }}
+                >
+                    Happy Birthday
+                </text>
+            </svg>
+            <svg viewBox="0 0 1000 180" style={{ width: '100%', overflow: 'visible', marginTop: '-20px' }}>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="cursive-write-text"
+                    style={{
+                        fontFamily: '"Great Vibes", cursive',
+                        fontSize: '130px',
+                        animationDelay: '1.2s'
+                    }}
+                >
+                    {name}!
+                </text>
+            </svg>
+        </div>
+    );
+};
 
 const InteractiveItem = ({ item, type, isOwner, onUpdate, onDelete, onEdit, isViewMode }) => {
     // manual drag logic for moving things around
@@ -352,6 +442,7 @@ export default function CardView() {
             background: '#ffffff',
             overflow: 'hidden'
         }}>
+            <CelebrationBalloons count={25} fast={true} />
             {/* header section */}
             <div style={{ position: 'absolute', top: 20, left: 20, right: 20, zIndex: 1000, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
                 <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -400,84 +491,87 @@ export default function CardView() {
                     </div>
                 </div>
 
-                <div style={{ pointerEvents: 'auto', display: 'flex', gap: 10 }}>
+                <div style={{ pointerEvents: 'auto', display: 'flex', gap: 12 }}>
                     <motion.button
-                        onClick={() => nav(`/gift/${id}/edit`)}
-                        whileHover={{ scale: 1.05 }}
+                        onClick={() => nav(`/card/${id}/recipient`)}
+                        whileHover={{ scale: 1.05, backgroundColor: '#f8f8f8' }}
                         whileTap={{ scale: 0.95 }}
                         style={{
                             background: 'white',
-                            border: '1px solid rgba(26, 26, 26, 0.2)',
-                            borderRadius: '50%',
-                            width: 50,
-                            height: 50,
+                            border: '1px solid rgba(0, 0, 0, 0.1)',
+                            borderRadius: '50px',
+                            padding: '10px 20px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            gap: 10,
                             cursor: 'pointer',
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                            color: '#1a1a1a'
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                            color: '#555',
+                            fontSize: '0.85rem',
+                            fontWeight: 600
                         }}
-                        title="Edit Wrapped Experience"
                     >
-                        <Edit size={20} />
+                        <Eye size={18} />
+                        <span>Preview the Card</span>
                     </motion.button>
 
                     <motion.button
-                        onClick={() => nav(`/card/${id}/recipient`)}
-                        whileHover={{ scale: 1.05 }}
+                        onClick={() => nav(`/gift/${id}/edit`)}
+                        whileHover={{ scale: 1.05, backgroundColor: '#f8f8f8' }}
                         whileTap={{ scale: 0.95 }}
                         style={{
                             background: 'white',
-                            border: '1px solid rgba(26, 26, 26, 0.2)',
-                            borderRadius: '50%',
-                            width: 50,
-                            height: 50,
+                            border: '1px solid rgba(0, 0, 0, 0.1)',
+                            borderRadius: '50px',
+                            padding: '10px 20px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            gap: 10,
                             cursor: 'pointer',
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                            color: '#1a1a1a'
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                            color: '#555',
+                            fontSize: '0.85rem',
+                            fontWeight: 600
                         }}
-                        title="Preview Recipient View"
                     >
-                        <Eye size={20} />
+                        <Sparkles size={18} color="#d4af37" />
+                        <span>Customize the Final Experience</span>
                     </motion.button>
 
                     <motion.button
                         onClick={() => nav(`/gift/${id}`)}
                         animate={{
-                            scale: [1, 1.05, 1],
-                            boxShadow: [
-                                '0 2px 10px rgba(255, 215, 0, 0.3)',
-                                '0 4px 20px rgba(255, 215, 0, 0.6)',
-                                '0 2px 10px rgba(255, 215, 0, 0.3)'
-                            ]
+                            scale: [1, 1.02, 1],
                         }}
                         transition={{
                             duration: 2,
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         style={{
-                            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                            background: 'linear-gradient(135deg, #1a1a1a 0%, #333 100%)',
                             border: 'none',
-                            borderRadius: '50%',
-                            width: 50,
-                            height: 50,
+                            borderRadius: '50px',
+                            padding: '12px 28px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            gap: 12,
                             cursor: 'pointer',
-                            color: 'white'
+                            color: 'white',
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
                         }}
-                        title="View Gift Experience"
                     >
-                        <Gift size={24} />
+                        <Gift size={20} />
+                        <span>Open the Final Experience</span>
                     </motion.button>
                 </div>
             </div>
+
+            <AnimatedBirthday name={recipient} delay={5000} />
 
             {(card?.drawings?.length === 0 && card?.messages?.length === 0) && (
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#ccc', textAlign: 'center', pointerEvents: 'none' }}>
@@ -525,15 +619,59 @@ export default function CardView() {
                 >
                     {viewMode ? (
                         <>
-                            <Settings size={16} /> Unlock Layout
+                            <Settings size={18} />
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Rearrange Elements</span>
+                                <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>Unlock layout to move things</span>
+                            </div>
                         </>
                     ) : (
                         <>
-                            <Check size={16} /> Done
+                            <Check size={18} color="#4CAF50" />
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Finish Arranging</span>
+                                <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>Save and lock layout</span>
+                            </div>
                         </>
                     )}
                 </button>
             </div>
+            {/* click to enlarge hint */}
+            {viewMode && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 15, duration: 1 }}
+                    style={{
+                        position: 'absolute',
+                        bottom: 40,
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        zIndex: 100,
+                        pointerEvents: 'none'
+                    }}
+                >
+                    <div style={{
+                        background: 'rgba(255, 255, 255, 0.5)',
+                        backdropFilter: 'blur(5px)',
+                        padding: '6px 16px',
+                        borderRadius: '50px',
+                        fontSize: '0.7rem',
+                        color: '#aaa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        fontFamily: 'var(--font-sans)',
+                        letterSpacing: '0.7px',
+                        textTransform: 'uppercase'
+                    }}>
+                        <span>Click any message to enlargen</span>
+                    </div>
+                </motion.div>
+            )}
+
             {/* footer info */}
             <div style={{ position: 'absolute', bottom: 15, left: 0, right: 0, textAlign: 'center', fontSize: '0.7rem', color: '#ccc', zIndex: 10, pointerEvents: 'none' }}>
                 <span style={{ pointerEvents: 'auto' }}>
