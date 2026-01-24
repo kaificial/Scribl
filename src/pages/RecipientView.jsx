@@ -373,20 +373,42 @@ export default function RecipientView() {
                             }}
                             onClick={e => e.stopPropagation()}
                         >
-                            <button
-                                onClick={() => setSelectedItem(null)}
-                                style={{
-                                    position: 'absolute',
-                                    top: 20,
-                                    right: 20,
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#aaa'
-                                }}
-                            >
-                                <X size={24} />
-                            </button>
+                            <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', gap: 10 }}>
+                                {selectedItem.type === 'drawing' && (
+                                    <button
+                                        onClick={() => {
+                                            const link = document.createElement('a');
+                                            link.download = `drawing-${selectedItem.id}.png`;
+                                            link.href = selectedItem.imageData;
+                                            link.click();
+                                        }}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            color: '#666',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            fontSize: '0.85rem'
+                                        }}
+                                        title="Download this image"
+                                    >
+                                        <Download size={20} />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setSelectedItem(null)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#aaa'
+                                    }}
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
 
                             {selectedItem.type === 'drawing' ? (
                                 <div style={{ textAlign: 'center' }}>
@@ -445,10 +467,9 @@ export default function RecipientView() {
                         alignItems: 'center',
                         boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                         fontFamily: 'var(--font-sans)',
-                        letterSpacing: '0.7px',
-                        textTransform: 'uppercase'
+                        letterSpacing: '0.7px'
                     }}>
-                        <span>Click any message to enlargen</span>
+                        <span>click any message to enlargen and download</span>
                     </div>
                 </motion.div>
             )}

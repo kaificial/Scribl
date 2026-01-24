@@ -656,10 +656,9 @@ export default function CardView() {
                         alignItems: 'center',
                         boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                         fontFamily: 'var(--font-sans)',
-                        letterSpacing: '0.7px',
-                        textTransform: 'uppercase'
+                        letterSpacing: '0.7px'
                     }}>
-                        <span>Click any message to enlargen</span>
+                        <span>click any message to enlargen and download</span>
                     </div>
                 </motion.div>
             )}
