@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Type, Image as ImageIcon, X, Bold, Italic, Underline, Minus, Plus, AlignLeft, AlignCenter, AlignRight, RotateCcw, RotateCw, Pencil, Eraser } from 'lucide-react';
+import { ArrowLeft, Send, Type, Image as ImageIcon, X, Bold, Italic, Underline, Minus, Plus, AlignLeft, AlignCenter, AlignRight, RotateCcw, RotateCw, Pencil, Eraser, Move } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { useCard } from '../hooks/useCard';
@@ -8,7 +8,7 @@ import html2canvas from 'html2canvas';
 import { v4 as uuidv4 } from 'uuid';
 import '../App.css';
 
-const DraggableElement = ({ element, updateElement, removeElement, isSelected, onSelect }) => {
+const DraggableElement = ({ element, updateElement, removeElement, isSelected, onSelect, activeTool }) => {
 
     // manual drag logic for moving stuff
     const handleMoveStart = (e) => {
@@ -123,15 +123,25 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
             }}
         >
             <div
+                className="draggable-content-wrapper"
                 style={{
                     position: 'relative',
                     border: isSelected ? '1px dashed #4b89dc' : '1px solid transparent',
                     padding: 0,
-                    height: '100%'
+                    height: '100%',
+                    borderRadius: 4,
+                    transition: 'border-color 0.2s',
+                    overflow: 'visible'
                 }}
             >
+                {/* Hover Move Handles (on edges) */}
+                <div data-html2canvas-ignore className="hover-move-handle top" style={{ position: 'absolute', top: -10, left: 0, right: 0, height: 20, cursor: 'move', zIndex: 1 }} />
+                <div data-html2canvas-ignore className="hover-move-handle bottom" style={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 20, cursor: 'move', zIndex: 1 }} />
+                <div data-html2canvas-ignore className="hover-move-handle left" style={{ position: 'absolute', top: 0, bottom: 0, left: -10, width: 20, cursor: 'move', zIndex: 1 }} />
+                <div data-html2canvas-ignore className="hover-move-handle right" style={{ position: 'absolute', top: 0, bottom: 0, right: -10, width: 20, cursor: 'move', zIndex: 1 }} />
                 {isSelected && (
                     <button
+                        data-html2canvas-ignore
                         onClick={(e) => { e.stopPropagation(); removeElement(element.id); }}
                         style={{
                             position: 'absolute', top: -15, right: -15,
@@ -147,6 +157,7 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
 
                 {isSelected && (
                     <div
+                        data-html2canvas-ignore
                         data-handle="resize"
                         onPointerDown={handleResizeStart}
                         style={{
@@ -164,6 +175,7 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
 
                 {isSelected && (
                     <div
+                        data-html2canvas-ignore
                         data-handle="rotate"
                         onPointerDown={handleRotateStart}
                         style={{
@@ -181,7 +193,38 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                     </div>
                 )}
 
-                <div style={{ width: '100%', height: '100%' }}>
+                {/* Prominent Move Handle */}
+                {isSelected && (
+                    <div
+                        data-html2canvas-ignore
+                        style={{
+                            position: 'absolute',
+                            top: -15,
+                            left: -15,
+                            width: 24,
+                            height: 24,
+                            background: '#1a1a1a',
+                            color: 'white',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'move',
+                            zIndex: 110,
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                            border: '2px solid white'
+                        }}
+                        title="Drag to move"
+                    >
+                        <Move size={14} />
+                    </div>
+                )}
+
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    cursor: activeTool === 'select' ? 'move' : 'default'
+                }}>
                     {element.type === 'text' ? (
                         <div
                             ref={(el) => {
@@ -245,6 +288,10 @@ export default function WriteMessage() {
     const [brushSize, setBrushSize] = useState(5);
     const [isDrawing, setIsDrawing] = useState(false);
     const [paths, setPaths] = useState([]);
+    const [imageToCrop, setImageToCrop] = useState(null); // { src, id }
+    const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
+    const [lastSaved, setLastSaved] = useState(Date.now());
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const selectedElement = elements.find(el => el.id === selectedId);
 
@@ -266,10 +313,23 @@ export default function WriteMessage() {
                 }
             }
             setIsLoading(false);
+            setTimeout(() => setIsInitialLoad(false), 500);
         } else if (!drawingId) {
             setIsLoading(false);
+            setTimeout(() => setIsInitialLoad(false), 500);
         }
     }, [card, drawingId]);
+
+    // Autosave effect
+    useEffect(() => {
+        if (isInitialLoad || elements.length === 0 && paths.length === 0) return;
+
+        const timer = setTimeout(() => {
+            handleSave(true);
+        }, 3000); // 3 second debounce
+
+        return () => clearTimeout(timer);
+    }, [elements, paths]);
 
     // dynamically size canvas to match container for crisp drawings
     useEffect(() => {
@@ -427,12 +487,13 @@ export default function WriteMessage() {
         if (file) {
             const reader = new FileReader();
             reader.onload = (f) => {
+                // Just add it directly as an image element first
                 const newEl = {
                     id: uuidv4(),
                     type: 'image',
                     src: f.target.result,
                     x: 50, y: 50,
-                    width: 200,
+                    width: 250,
                     rotation: 0
                 };
                 const newEls = [...elements, newEl];
@@ -443,6 +504,27 @@ export default function WriteMessage() {
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleCropDone = (croppedSrc, existingId = null) => {
+        if (existingId) {
+            updateElement(existingId, { src: croppedSrc });
+        } else {
+            const newEl = {
+                id: uuidv4(),
+                type: 'image',
+                src: croppedSrc,
+                x: 50, y: 50,
+                width: 250,
+                rotation: 0
+            };
+            const newEls = [...elements, newEl];
+            setElements(newEls);
+            addToHistory(newEls);
+            setSelectedId(newEl.id);
+        }
+        setImageToCrop(null);
+        setActiveTool('select');
     };
 
     const updateElement = (elId, updates, skipHistory = false) => {
@@ -494,34 +576,57 @@ export default function WriteMessage() {
         const container = canvasRef.current.getBoundingClientRect();
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-        // for text and stickers
+        // Use DOM for accurate measurements of elements
         elements.forEach(el => {
-            const pxX = (el.x / 100) * container.width;
-            const pxY = (el.y / 100) * container.height;
-            const halfW = (el.width || 200) / 2;
-            const halfH = el.type === 'text' ? 50 : halfW;
+            const domEl = document.querySelector(`.draggable-item[data-id="${el.id}"]`);
+            if (domEl) {
+                const rect = domEl.getBoundingClientRect();
+                const relativeX = rect.left - container.left;
+                const relativeY = rect.top - container.top;
 
-            minX = Math.min(minX, pxX - halfW);
-            minY = Math.min(minY, pxY - halfH);
-            maxX = Math.max(maxX, pxX + halfW);
-            maxY = Math.max(maxY, pxY + halfH);
+                minX = Math.min(minX, relativeX);
+                minY = Math.min(minY, relativeY);
+                maxX = Math.max(maxX, relativeX + rect.width);
+                maxY = Math.max(maxY, relativeY + rect.height);
+            } else {
+                // Fallback if not in DOM yet
+                const pxX = (el.x / 100) * container.width;
+                const pxY = (el.y / 100) * container.height;
+                const halfW = (el.width || 200) / 2;
+                const halfH = el.type === 'text' ? 50 : halfW;
+
+                minX = Math.min(minX, pxX - halfW);
+                minY = Math.min(minY, pxY - halfH);
+                maxX = Math.max(maxX, pxX + halfW);
+                maxY = Math.max(maxY, pxY + halfH);
+            }
         });
 
         // for paths (stored in pixel coordinates)
         paths.forEach(path => {
+            const halfBrush = (path.width || 5) / 2;
             path.points.forEach(p => {
-                minX = Math.min(minX, p.x);
-                minY = Math.min(minY, p.y);
-                maxX = Math.max(maxX, p.x);
-                maxY = Math.max(maxY, p.y);
+                minX = Math.min(minX, p.x - halfBrush);
+                minY = Math.min(minY, p.y - halfBrush);
+                maxX = Math.max(maxX, p.x + halfBrush);
+                maxY = Math.max(maxY, p.y + halfBrush);
             });
         });
 
-        const padding = 40;
+        // Ensure we don't go out of bounds
+        minX = Math.max(0, minX);
+        minY = Math.max(0, minY);
+        maxX = Math.min(container.width, maxX);
+        maxY = Math.min(container.height, maxY);
+
+        const padding = 20;
         const boxX = Math.max(0, minX - padding);
         const boxY = Math.max(0, minY - padding);
         const boxW = Math.min(container.width - boxX, (maxX - minX) + padding * 2);
         const boxH = Math.min(container.height - boxY, (maxY - minY) + padding * 2);
+
+        // Safety check for empty content
+        if (boxW <= 0 || boxH <= 0) return null;
 
         return {
             x: boxX,
@@ -533,52 +638,74 @@ export default function WriteMessage() {
         };
     };
 
-    const handleSave = async () => {
+    const handleSave = async (isAutosave = false) => {
         if (isSaving) return;
-        setIsSaving(true);
-        setSelectedId(null);
-        setActiveTool('select');
+        setSaveStatus('saving');
+        if (!isAutosave) setIsSaving(true);
 
-        await new Promise(r => setTimeout(r, 100));
+        // Deselect stuff before screenshot
+        if (!isAutosave) {
+            setSelectedId(null);
+            setActiveTool('select');
+            await new Promise(r => setTimeout(r, 150)); // Wait for UI to update
+        }
 
         try {
             const bounds = getBoundingBox();
 
             const canvas = await html2canvas(canvasRef.current, {
                 backgroundColor: '#ffffff',
-                scale: 3, // higher quality export
+                scale: isAutosave ? 1.5 : 2, // Lighter for autosave
                 logging: false,
                 useCORS: true,
-                // if there is content crop to it, otherwise just capture the whole canvas
                 x: bounds ? bounds.x : 0,
                 y: bounds ? bounds.y : 0,
                 width: bounds ? bounds.width : undefined,
-                height: bounds ? bounds.height : undefined
+                height: bounds ? bounds.height : undefined,
+                ignoreElements: (el) => el.classList.contains('no-export') || el.hasAttribute('data-html2canvas-ignore')
             });
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Switch to JPEG and 0.8 quality for 10x smaller payload
+            const dataUrl = canvas.toDataURL('image/jpeg', isAutosave ? 0.5 : 0.7);
             const contentJson = JSON.stringify({ elements, paths });
             const userId = localStorage.getItem('userId');
             const authorName = localStorage.getItem('userName') || "Anonymous";
             const recipientName = searchParams.get('recipient');
 
-            // use the center of the stuff for how it shows up on the card
             const posX = bounds ? bounds.centerX : 50;
             const posY = bounds ? bounds.centerY : 50;
 
-            // Background save logic
-            const saveOp = drawingId
+            const saveOp = (drawingId && drawingId !== 'null')
                 ? api.updateDrawing(id, drawingId, { imageData: dataUrl, contentJson, x: posX, y: posY })
                 : api.addDrawing(id, { imageData: dataUrl, contentJson, userId, authorName, x: posX, y: posY }, recipientName);
 
             const updatedCard = await saveOp;
             mutate(updatedCard);
 
-            nav(`/card/${id}/view?recipient=${encodeURIComponent(recipientName || '')}`);
+            setSaveStatus('saved');
+            setLastSaved(Date.now());
+
+            // If we are on a new drawing, find its ID from the updated card
+            if (!drawingId || drawingId === 'null') {
+                const drawings = updatedCard.drawings || [];
+                // Find the drawing with our userId and the latest ID (numerically highest)
+                const newDrawing = [...drawings]
+                    .filter(d => d.userId === userId)
+                    .sort((a, b) => b.id - a.id)[0];
+
+                if (newDrawing) {
+                    nav(`/card/${id}/edit?drawingId=${newDrawing.id}&recipient=${encodeURIComponent(recipientName || '')}`, { replace: true });
+                }
+            }
+
+            if (!isAutosave) {
+                nav(`/card/${id}/view?recipient=${encodeURIComponent(recipientName || '')}`);
+            }
         } catch (err) {
-            console.error(err);
-            alert(`Failed to save: ${err.message}`);
-            setIsSaving(false);
+            console.error("Save error:", err);
+            setSaveStatus('error');
+            if (!isAutosave) alert(`Failed to save: ${err.message}`);
+        } finally {
+            if (!isAutosave) setIsSaving(false);
         }
     };
 
@@ -692,28 +819,63 @@ export default function WriteMessage() {
                     <ArrowLeft size={18} /> Exit
                 </button>
 
-                <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    style={{
-                        background: '#1a1a1a',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 30px',
-                        borderRadius: '50px',
+                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '6px 15px',
+                        borderRadius: '20px',
+                        fontSize: '0.8rem',
+                        color: saveStatus === 'error' ? '#ff5252' : '#666',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
-                        cursor: isSaving ? 'default' : 'pointer',
-                        opacity: isSaving ? 0.7 : 1,
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-                        fontWeight: 600,
-                        fontSize: '0.9rem'
-                    }}
-                >
-                    Finish Message
-                    <Send size={18} />
-                </button>
+                        gap: 5,
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                        border: '1px solid rgba(0,0,0,0.05)'
+                    }}>
+                        {saveStatus === 'saving' ? (
+                            <>
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                    style={{ width: 10, height: 10, border: '2px solid #ddd', borderTopColor: '#1a1a1a', borderRadius: '50%' }}
+                                />
+                                Saving...
+                            </>
+                        ) : saveStatus === 'saved' ? (
+                            <>
+                                <div style={{ width: 6, height: 6, background: '#4CAF50', borderRadius: '50%' }} />
+                                Saved
+                            </>
+                        ) : (
+                            <>
+                                <div style={{ width: 6, height: 6, background: '#ff5252', borderRadius: '50%' }} />
+                                Save Error
+                            </>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => handleSave(false)}
+                        disabled={isSaving}
+                        style={{
+                            background: '#1a1a1a',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 30px',
+                            borderRadius: '50px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            cursor: isSaving ? 'default' : 'pointer',
+                            opacity: isSaving ? 0.7 : 1,
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                            fontWeight: 600,
+                            fontSize: '0.9rem'
+                        }}
+                    >
+                        Finish Message
+                        <Send size={18} />
+                    </button>
+                </div>
             </div>
 
             <div className="content-wrapper" style={{
@@ -756,6 +918,7 @@ export default function WriteMessage() {
                             }}
                             updateElement={updateElement}
                             removeElement={removeElement}
+                            activeTool={activeTool}
                         />
                     ))}
 
@@ -861,6 +1024,19 @@ export default function WriteMessage() {
                         </div>
                     )}
 
+                    {activeTool === 'select' && selectedElement && selectedElement.type === 'image' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <button
+                                onClick={() => setImageToCrop({ src: selectedElement.src, id: selectedElement.id })}
+                                className="toolbar-btn"
+                                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', width: 'auto' }}
+                            >
+                                <ImageIcon size={16} />
+                                <span style={{ fontSize: '0.8rem' }}>Modify Crop</span>
+                            </button>
+                        </div>
+                    )}
+
                     {(activeTool === 'pen' || activeTool === 'eraser') && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
@@ -895,6 +1071,200 @@ export default function WriteMessage() {
                     2026 <a href="https://kaificial.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Kaificial</a>
                 </span>
             </div>
+
+            <CropModal
+                image={imageToCrop}
+                onClose={() => setImageToCrop(null)}
+                onCropDone={handleCropDone}
+            />
         </div>
+    );
+}
+
+function CropModal({ image, onClose, onCropDone }) {
+    const [crop, setCrop] = useState({ x: 10, y: 10, width: 80, height: 80 });
+    const imageRef = useRef(null);
+    const containerRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeHandle, setResizeHandle] = useState(null);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0, cropX: 0, cropY: 0, cropW: 0, cropH: 0 });
+
+    if (!image) return null;
+
+    const handlePointerDown = (e, handle = null) => {
+        e.stopPropagation();
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        if (handle) {
+            setIsResizing(true);
+            setResizeHandle(handle);
+        } else {
+            setIsDragging(true);
+        }
+        setDragStart({ x, y, cropX: crop.x, cropY: crop.y, cropW: crop.width, cropH: crop.height });
+    };
+
+    const handlePointerMove = (e) => {
+        if (!isDragging && !isResizing) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        const dx = x - dragStart.x;
+        const dy = y - dragStart.y;
+
+        if (isDragging) {
+            setCrop(prev => ({
+                ...prev,
+                x: Math.max(0, Math.min(100 - prev.width, dragStart.cropX + dx)),
+                y: Math.max(0, Math.min(100 - prev.height, dragStart.cropY + dy))
+            }));
+        } else if (isResizing) {
+            setCrop(prev => {
+                let newCrop = { ...prev };
+                if (resizeHandle.includes('e')) newCrop.width = Math.max(10, Math.min(100 - prev.x, dragStart.cropW + dx));
+                if (resizeHandle.includes('s')) newCrop.height = Math.max(10, Math.min(100 - prev.y, dragStart.cropH + dy));
+                if (resizeHandle.includes('w')) {
+                    const nextW = Math.max(10, dragStart.cropW - dx);
+                    if (dragStart.cropX + dx >= 0 && dragStart.cropX + dx <= dragStart.cropX + dragStart.cropW - 10) {
+                        newCrop.x = dragStart.cropX + dx;
+                        newCrop.width = nextW;
+                    }
+                }
+                if (resizeHandle.includes('n')) {
+                    const nextH = Math.max(10, dragStart.cropH - dy);
+                    if (dragStart.cropY + dy >= 0 && dragStart.cropY + dy <= dragStart.cropY + dragStart.cropH - 10) {
+                        newCrop.y = dragStart.cropY + dy;
+                        newCrop.height = nextH;
+                    }
+                }
+                return newCrop;
+            });
+        }
+    };
+
+    const stopAction = () => {
+        setIsDragging(false);
+        setIsResizing(false);
+        setResizeHandle(null);
+    };
+
+    const applyCrop = () => {
+        const canvas = document.createElement('canvas');
+        const img = imageRef.current;
+        const scaleX = img.naturalWidth / 100;
+        const scaleY = img.naturalHeight / 100;
+
+        canvas.width = (crop.width * scaleX);
+        canvas.height = (crop.height * scaleY);
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(
+            img,
+            crop.x * scaleX,
+            crop.y * scaleY,
+            crop.width * scaleX,
+            crop.height * scaleY,
+            0, 0,
+            canvas.width,
+            canvas.height
+        );
+
+        onCropDone(canvas.toDataURL('image/jpeg', 0.8), image.id);
+    };
+
+    const Handle = ({ pos }) => {
+        const style = {
+            position: 'absolute',
+            width: 12, height: 12,
+            background: 'white', border: '2px solid #1a1a1a',
+            zIndex: 10, borderRadius: '50%',
+            cursor: pos.length === 1 ? (pos === 'n' || pos === 's' ? 'ns-resize' : 'ew-resize') : (pos === 'nw' || pos === 'se' ? 'nwse-resize' : 'nesw-resize')
+        };
+
+        if (pos.includes('n')) style.top = -6;
+        if (pos.includes('s')) style.bottom = -6;
+        if (pos.includes('w')) style.left = -6;
+        if (pos.includes('e')) style.right = -6;
+        if (pos === 'n' || pos === 's') style.left = '50%', style.marginLeft = -6;
+        if (pos === 'w' || pos === 'e') style.top = '50%', style.marginTop = -6;
+
+        return <div style={style} onPointerDown={(e) => handlePointerDown(e, pos)} />;
+    };
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                    position: 'fixed', inset: 0, zIndex: 3000,
+                    background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+                }}
+            >
+                <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    style={{
+                        background: 'white', borderRadius: 24, width: '100%', maxWidth: 600,
+                        overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+                    }}
+                >
+                    <div style={{ padding: '20px 25px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Crop Image</h3>
+                        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}><X size={20} /></button>
+                    </div>
+
+                    <div style={{ padding: 20, background: '#111', display: 'flex', justifyContent: 'center' }}>
+                        <div
+                            ref={containerRef}
+                            style={{ position: 'relative', maxWidth: '100%', maxHeight: '60vh', overflow: 'hidden' }}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={stopAction}
+                            onPointerLeave={stopAction}
+                        >
+                            <img
+                                ref={imageRef}
+                                src={image.src}
+                                alt="to crop"
+                                style={{ display: 'block', maxWidth: '100%', maxHeight: '60vh', opacity: 0.5, userSelect: 'none', pointerEvents: 'none' }}
+                            />
+                            <div
+                                onPointerDown={(e) => handlePointerDown(e)}
+                                style={{
+                                    position: 'absolute',
+                                    top: `${crop.y}%`, left: `${crop.x}%`,
+                                    width: `${crop.width}%`, height: `${crop.height}%`,
+                                    border: '2px solid white', boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
+                                    cursor: 'move', touchAction: 'none'
+                                }}
+                            >
+                                <Handle pos="nw" /> <Handle pos="n" /> <Handle pos="ne" />
+                                <Handle pos="w" /> <Handle pos="e" />
+                                <Handle pos="sw" /> <Handle pos="s" /> <Handle pos="se" />
+
+                                <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)' }}>
+                                    {[...Array(9)].map((_, i) => <div key={i} style={{ border: '0.5px solid rgba(255,255,255,0.1)' }} />)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ padding: 15, background: '#f9f9f9', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '0.8rem', color: '#666' }}>
+                        Drag corners or edges to resize. Drag the center to reposition.
+                    </div>
+
+                    <div style={{ padding: 20, display: 'flex', justifyContent: 'flex-end', gap: 12, background: '#f9f9f9' }}>
+                        <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: 12, border: '1px solid #ddd', background: 'white', fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                        <button onClick={applyCrop} style={{ padding: '10px 25px', borderRadius: 12, border: 'none', background: '#1a1a1a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Apply Crop</button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 }

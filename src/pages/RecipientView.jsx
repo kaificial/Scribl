@@ -2,10 +2,100 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCard } from '../hooks/useCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, ChevronLeft, X } from 'lucide-react';
+import { Download, ChevronLeft, X, Sparkles } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { api } from '../services/api';
+import CelebrationBalloons from '../components/CelebrationBalloons';
 import '../App.css';
+
+const AnimatedBirthday = ({ name, delay = 0, isCapturing = false }) => {
+    const [show, setShow] = useState(delay === 0 || isCapturing);
+
+    useEffect(() => {
+        if (!isCapturing && delay > 0) {
+            const timer = setTimeout(() => setShow(true), delay);
+            return () => clearTimeout(timer);
+        }
+    }, [delay, isCapturing]);
+
+    if (!show) return null;
+
+    if (isCapturing) {
+        return (
+            <div style={{
+                position: 'absolute',
+                top: '50.5%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '60vw',
+                maxWidth: '800px',
+                pointerEvents: 'none',
+                zIndex: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                color: '#666',
+                fontFamily: '"Great Vibes", cursive',
+                opacity: 0.2
+            }}>
+                <div style={{ fontSize: '72px', whiteSpace: 'nowrap', lineHeight: 1.1, fontFamily: '"Great Vibes", cursive' }}>Happy Birthday</div>
+                <div style={{ fontSize: '88px', whiteSpace: 'nowrap', lineHeight: 1.1, marginTop: '-10px', fontFamily: '"Great Vibes", cursive' }}>{name}!</div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '60vw',
+            maxWidth: '800px',
+            pointerEvents: 'none',
+            zIndex: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'visible'
+        }}>
+            <svg viewBox="0 0 1000 150" style={{ width: '100%', overflow: 'visible' }}>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="cursive-write-text"
+                    style={{
+                        fontFamily: '"Great Vibes", cursive',
+                        fontSize: '110px',
+                    }}
+                >
+                    Happy Birthday
+                </text>
+            </svg>
+            <svg viewBox="0 0 1000 180" style={{ width: '100%', overflow: 'visible', marginTop: '-20px' }}>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="cursive-write-text"
+                    style={{
+                        fontFamily: '"Great Vibes", cursive',
+                        fontSize: '130px',
+                        animationDelay: '1.2s'
+                    }}
+                >
+                    {name}!
+                </text>
+            </svg>
+        </div>
+    );
+};
 
 export default function RecipientView() {
     const { id } = useParams();
@@ -20,11 +110,30 @@ export default function RecipientView() {
     const handleDownload = async () => {
         if (!captureRef.current) return;
         setIsDownloading(true);
+
+        // ensure fonts are loaded
+        try {
+            await document.fonts.ready;
+        } catch (e) { }
+
+        // Wait for React to re-render the "capture-ready" state
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         try {
             const canvas = await html2canvas(captureRef.current, {
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                scale: 2
+                scale: 2,
+                logging: false,
+                onclone: (doc) => {
+                    // font double-check
+                    const elements = doc.querySelectorAll('*');
+                    elements.forEach(el => {
+                        if (el.style.fontFamily && el.style.fontFamily.includes('Great Vibes')) {
+                            el.style.fontFamily = '"Great Vibes", cursive';
+                        }
+                    });
+                }
             });
             const link = document.createElement('a');
             link.download = `scribl-card-${id}.png`;
@@ -89,6 +198,7 @@ export default function RecipientView() {
             position: 'fixed',
             inset: 0
         }}>
+            <CelebrationBalloons count={35} fast={true} />
             {/* floating header with buttons like cardview */}
             <div style={{
                 position: 'absolute',
@@ -101,46 +211,60 @@ export default function RecipientView() {
                 pointerEvents: 'none'
             }}>
                 <button
-                    onClick={() => nav(`/card/${id}/experience`)}
+                    onClick={() => nav(`/gift/${id}`)}
                     style={{
-                        background: 'rgba(255,255,255,0.8)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        padding: '8px 16px',
-                        borderRadius: '50px',
+                        background: 'none',
+                        border: 'none',
+                        padding: '8px',
+                        color: '#bbb',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
+                        gap: 6,
                         cursor: 'pointer',
-                        fontSize: '0.9rem',
+                        fontSize: '0.75rem',
                         fontWeight: 500,
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                        pointerEvents: 'auto'
+                        pointerEvents: 'auto',
+                        transition: 'all 0.2s ease',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.color = '#1a1a1a';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.color = '#bbb';
                     }}
                 >
-                    <ChevronLeft size={16} /> Replay Experience
+                    <ChevronLeft size={14} /> Replay
                 </button>
 
                 <button
                     onClick={handleDownload}
                     disabled={isDownloading}
                     style={{
-                        background: 'rgba(255,255,255,0.8)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        padding: '8px 16px',
-                        borderRadius: '50px',
+                        background: 'none',
+                        border: 'none',
+                        padding: '8px',
+                        color: '#bbb',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
+                        gap: 6,
                         cursor: 'pointer',
-                        fontSize: '0.9rem',
+                        fontSize: '0.75rem',
                         fontWeight: 500,
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                        pointerEvents: 'auto'
+                        pointerEvents: 'auto',
+                        transition: 'all 0.2s ease',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.color = '#1a1a1a';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.color = '#bbb';
                     }}
                 >
-                    {isDownloading ? 'Capturing...' : <><Download size={16} /> Download</>}
+                    {isDownloading ? '...' : <><Download size={14} /> Download</>}
                 </button>
             </div>
 
@@ -156,7 +280,15 @@ export default function RecipientView() {
                     overflow: 'hidden'
                 }}
             >
-                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    background: '#ffffff'
+                }}>
+                    <div className={isDownloading ? "no-animation" : ""} style={{ opacity: 1 }}>
+                        <AnimatedBirthday name={card?.recipientName} delay={isDownloading ? 0 : 5000} isCapturing={isDownloading} />
+                    </div>
                     {items.map((item, idx) => (
                         <div
                             key={`${item.type}-${item.id}`}
@@ -235,7 +367,8 @@ export default function RecipientView() {
                                 borderRadius: '30px',
                                 boxShadow: '0 30px 100px rgba(0,0,0,0.1)',
                                 position: 'relative',
-                                max_width: '90vw',
+                                maxHeight: '90vh',
+                                maxWidth: '90vw',
                                 cursor: 'default'
                             }}
                             onClick={e => e.stopPropagation()}
@@ -283,6 +416,42 @@ export default function RecipientView() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* click to enlarge hint */}
+            {!isDownloading && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 15, duration: 1 }}
+                    style={{
+                        position: 'absolute',
+                        bottom: 40,
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        zIndex: 100,
+                        pointerEvents: 'none'
+                    }}
+                >
+                    <div style={{
+                        background: 'rgba(255, 255, 255, 0.5)',
+                        backdropFilter: 'blur(5px)',
+                        padding: '6px 16px',
+                        borderRadius: '50px',
+                        fontSize: '0.7rem',
+                        color: '#aaa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        fontFamily: 'var(--font-sans)',
+                        letterSpacing: '0.7px',
+                        textTransform: 'uppercase'
+                    }}>
+                        <span>Click any message to enlargen</span>
+                    </div>
+                </motion.div>
+            )}
 
             {/* footer info */}
             <div style={{ position: 'absolute', bottom: 15, left: 0, right: 0, textAlign: 'center', fontSize: '0.7rem', color: '#ccc', zIndex: 10, pointerEvents: 'none' }}>
