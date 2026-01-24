@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 const FloatingBalloons = memo(() => {
     // Minimal color palette: Gold, Yellow, Black, White, Grey/Silver
     const balloonColors = [
-        'rgba(212, 175, 55, 0.7)',  // Gold
-        'rgba(241, 196, 15, 0.7)',  // Yellow
-        'rgba(26, 26, 26, 0.8)',    // Black
         'rgba(255, 255, 255, 0.8)', // White
         'rgba(189, 195, 199, 0.7)', // Grey
-        'rgba(149, 165, 166, 0.6)', // Silver/Slate
+        'rgba(26, 26, 26, 0.8)',    // Black
+        'rgba(212, 175, 55, 0.7)',  // Gold
+        'rgba(241, 196, 15, 0.7)',  // Yellow
+        'rgba(139, 69, 19, 0.7)',   // Brown
+        'rgba(210, 180, 140, 0.7)', // Tan
+        'rgba(255, 253, 208, 0.8)', // Cream
     ];
 
     // Create 32 balloons with a distribution favoring sides

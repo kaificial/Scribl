@@ -5,18 +5,9 @@ export default function InteractiveGiftBox({ isActive, customTitle, customSubtit
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
 
-    // some placeholder images from unsplash
-    const defaultCards = [
-        { id: 1, image: "https://images.unsplash.com/photo-1513151241165-55a300684135?w=500&q=80" },
-        { id: 2, image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&q=80" },
-        { id: 3, image: "https://images.unsplash.com/photo-1530103862676-de3c9a59af38?w=500&q=80" },
-        { id: 4, image: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=500&q=80" },
-        { id: 5, image: "https://images.unsplash.com/photo-1514525253440-b39345208608?w=500&q=80" }
-    ];
-
     const cards = customPhotos && customPhotos.length > 0
         ? customPhotos.map((photo, index) => ({ id: `custom-${index}`, image: photo }))
-        : defaultCards;
+        : [];
 
     const swipeConfidenceThreshold = 10000;
     const swipePower = (offset, velocity) => {
@@ -56,6 +47,8 @@ export default function InteractiveGiftBox({ isActive, customTitle, customSubtit
         })
     };
 
+    if (!isActive) return null;
+
     return (
         <div style={{
             width: '100%',
@@ -90,7 +83,7 @@ export default function InteractiveGiftBox({ isActive, customTitle, customSubtit
                         letterSpacing: '-0.02em'
                     }}
                 >
-                    {customTitle || "Title here"}
+                    {customTitle || "Memories & Milestones"}
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0, y: -10 }}
@@ -103,7 +96,7 @@ export default function InteractiveGiftBox({ isActive, customTitle, customSubtit
                         fontWeight: 400
                     }}
                 >
-                    {customSubtitle || "Subtitle here"}
+                    {customSubtitle || "A year filled with joy and laughter"}
                 </motion.p>
             </div>
 
@@ -163,136 +156,142 @@ export default function InteractiveGiftBox({ isActive, customTitle, customSubtit
             })}
 
             {/* the stack of photos */}
-            <div style={{
-                position: 'relative',
-                width: '90%',
-                maxWidth: 320, // Polaroid width
-                height: 400, // Polaroid height
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 10,
-                marginTop: '60px' // Space for header
-            }}>
-                <AnimatePresence initial={false} custom={direction}>
-                    <motion.div
-                        key={currentIndex}
-                        custom={direction}
-                        variants={variants}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{
-                            x: { type: "spring", stiffness: 300, damping: 30 },
-                            opacity: { duration: 0.2 },
-                            rotate: { duration: 0.4 }
-                        }}
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={1}
-                        onDragEnd={(e, { offset, velocity }) => {
-                            const swipe = swipePower(offset.x, velocity.x);
-
-                            if (swipe < -swipeConfidenceThreshold) {
-                                paginate(1);
-                            } else if (swipe > swipeConfidenceThreshold) {
-                                paginate(-1);
-                            }
-                        }}
-                        style={{
-                            position: 'absolute',
-                            width: '100%',
-                            height: '100%',
-                            background: '#ffffff',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-                            cursor: 'grab',
-                            userSelect: 'none',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            padding: '16px 16px 60px 16px', // Classic Polaroid padding
-                            boxSizing: 'border-box'
-                        }}
-                    >
-                        {/* the polaroid part */}
-                        <div style={{
-                            width: '100%',
-                            height: '100%',
-                            background: '#e0e0e0',
-                            overflow: 'hidden',
-                            position: 'relative'
-                        }}>
-                            {/* the actual photo image */}
-                            <img
-                                src={cards[currentIndex].image}
-                                alt=""
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                }}
-                            />
-
-                            {/* slight texture on top */}
-                            <div style={{
-                                position: 'absolute',
-                                inset: 0,
-                                background: 'linear-gradient(to bottom right, rgba(0,0,0,0.05), rgba(0,0,0,0.02))',
-                                pointerEvents: 'none'
-                            }} />
-                        </div>
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-
-            {/* hint telling you to swipe */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.6 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                style={{
-                    fontFamily: 'var(--font-serif)',
-                    fontSize: '0.9rem',
-                    color: '#1a1a1a',
-                    marginTop: '20px',
-                    fontStyle: 'italic',
-                    zIndex: 2,
+            {cards.length > 0 && (
+                <div style={{
+                    position: 'relative',
+                    width: '90%',
+                    maxWidth: 320, // Polaroid width
+                    height: 400, // Polaroid height
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
-                }}
-            >
-                swipe to see more <span style={{ fontStyle: 'normal' }}>→</span>
-            </motion.div>
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    marginTop: '60px' // Space for header
+                }}>
+                    <AnimatePresence initial={false} custom={direction}>
+                        <motion.div
+                            key={currentIndex}
+                            custom={direction}
+                            variants={variants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{
+                                x: { type: "spring", stiffness: 300, damping: 30 },
+                                opacity: { duration: 0.2 },
+                                rotate: { duration: 0.4 }
+                            }}
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={1}
+                            onDragEnd={(e, { offset, velocity }) => {
+                                const swipe = swipePower(offset.x, velocity.x);
+
+                                if (swipe < -swipeConfidenceThreshold) {
+                                    paginate(1);
+                                } else if (swipe > swipeConfidenceThreshold) {
+                                    paginate(-1);
+                                }
+                            }}
+                            style={{
+                                position: 'absolute',
+                                width: '100%',
+                                height: '100%',
+                                background: '#ffffff',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+                                cursor: 'grab',
+                                userSelect: 'none',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                padding: '16px 16px 60px 16px', // Classic Polaroid padding
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            {/* the polaroid part */}
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                background: '#e0e0e0',
+                                overflow: 'hidden',
+                                position: 'relative'
+                            }}>
+                                {/* the actual photo image */}
+                                <img
+                                    src={cards[currentIndex].image}
+                                    alt=""
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                    }}
+                                />
+
+                                {/* slight texture on top */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'linear-gradient(to bottom right, rgba(0,0,0,0.05), rgba(0,0,0,0.02))',
+                                    pointerEvents: 'none'
+                                }} />
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            )}
+
+            {/* hint telling you to swipe */}
+            {cards.length > 1 && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.6 }}
+                    transition={{ delay: 1, duration: 0.8 }}
+                    style={{
+                        fontFamily: 'var(--font-serif)',
+                        fontSize: '0.9rem',
+                        color: '#1a1a1a',
+                        marginTop: '20px',
+                        fontStyle: 'italic',
+                        zIndex: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                    }}
+                >
+                    swipe to see more <span style={{ fontStyle: 'normal' }}>→</span>
+                </motion.div>
+            )}
 
             {/* dots showing where you are in the stack */}
-            <div style={{
-                display: 'flex',
-                gap: 8,
-                marginTop: 40,
-                zIndex: 10
-            }}>
-                {cards.map((_, index) => (
-                    <motion.div
-                        key={index}
-                        onClick={() => {
-                            setDirection(index > currentIndex ? 1 : -1);
-                            setCurrentIndex(index);
-                        }}
-                        animate={{
-                            scale: currentIndex === index ? 1.2 : 1,
-                            opacity: currentIndex === index ? 1 : 0.4
-                        }}
-                        style={{
-                            width: currentIndex === index ? 24 : 8,
-                            height: 8,
-                            borderRadius: 4,
-                            background: currentIndex === index ? '#1a1a1a' : '#1a1a1a',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease'
-                        }}
-                    />
-                ))}
-            </div>
+            {cards.length > 1 && (
+                <div style={{
+                    display: 'flex',
+                    gap: 8,
+                    marginTop: 40,
+                    zIndex: 10
+                }}>
+                    {cards.map((_, index) => (
+                        <motion.div
+                            key={index}
+                            onClick={() => {
+                                setDirection(index > currentIndex ? 1 : -1);
+                                setCurrentIndex(index);
+                            }}
+                            animate={{
+                                scale: currentIndex === index ? 1.2 : 1,
+                                opacity: currentIndex === index ? 1 : 0.4
+                            }}
+                            style={{
+                                width: currentIndex === index ? 24 : 8,
+                                height: 8,
+                                borderRadius: 4,
+                                background: currentIndex === index ? '#1a1a1a' : '#1a1a1a',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease'
+                            }}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
