@@ -453,41 +453,50 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* Image Frames */
 .frame-polaroid {
-  background: #fff !important;
+  background: #ffffff !important;
   padding: 12px 12px 45px 12px !important;
-  /* Multi-layered "stack" shadow for depth */
+  /* Multi-layered "stack" shadow for depth and visibility on white */
   box-shadow:
-    0 4px 10px rgba(0, 0, 0, 0.08),
-    0 15px 40px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    /* Subtle defining edge */
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    /* Soft immediate shadow */
+    0 15px 35px rgba(0, 0, 0, 0.12),
+    /* Deep lifted shadow */
+    0 25px 50px -12px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.03),
+    /* Inner paper edge */
+    inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
   border-radius: 2px !important;
   position: relative !important;
 }
 
-.frame-polaroid::after {
-  content: "" !important;
+.frame-polaroid-texture {
   position: absolute !important;
   inset: 0 !important;
   background-image: url("https://www.transparenttextures.com/patterns/cardboard-flat.png") !important;
   opacity: 0.03 !important;
   pointer-events: none !important;
+  z-index: 5 !important;
 }
 
 .frame-modern {
   border: 10px solid white !important;
   box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.1),
-    0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    0 0 0 1px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.15),
+    0 1px 5px rgba(0, 0, 0, 0.08),
+    inset 0 0 10px rgba(0, 0, 0, 0.05) !important;
   border-radius: 8px !important;
 }
 
 .frame-tape {
   position: relative !important;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  /* Tape usually has a very subtle shadow for the whole image */
+  filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.1)) !important;
 }
 
-.frame-tape::before {
-  content: "" !important;
+.frame-tape-piece {
   position: absolute !important;
   top: -18px !important;
   left: 50% !important;
@@ -519,8 +528,7 @@ input[type=number]::-webkit-outer-spin-button {
   clip-path: polygon(0% 0%, 100% 0%, 100% 85%, 85% 100%, 0% 100%) !important;
 }
 
-.msg-style-sticky::after {
-  content: "" !important;
+.msg-style-sticky-corner {
   position: absolute !important;
   bottom: 0 !important;
   right: 0 !important;
@@ -528,6 +536,7 @@ input[type=number]::-webkit-outer-spin-button {
   height: 15% !important;
   background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.05) 100%) !important;
   pointer-events: none !important;
+  z-index: 5 !important;
 }
 
 .msg-style-sticky .rich-text-editor {

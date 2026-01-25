@@ -291,7 +291,8 @@ export default function GiftExperience() {
                                                     width: '100%',
                                                     height: 'auto',
                                                     display: 'block',
-                                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                                                    filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))',
+                                                    borderRadius: '4px'
                                                 }}
                                                 alt="Preview"
                                             />

@@ -313,10 +313,12 @@ export default function RecipientView() {
                             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                                 {item.type === 'message' ? (
                                     <div style={{
-                                        padding: '10px',
-                                        background: 'transparent',
+                                        padding: '12px 16px',
+                                        background: '#fff',
                                         minHeight: 50,
-                                        borderRadius: '4px'
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(0,0,0,0.06)',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
                                     }}>
                                         <div dangerouslySetInnerHTML={{ __html: item.content }} style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', margin: 0, color: '#1a1a1a' }} />
                                         <div style={{ textAlign: 'right', marginTop: 10, color: '#aaa', fontStyle: 'italic', fontSize: '0.8rem' }}>
@@ -327,7 +329,16 @@ export default function RecipientView() {
                                     <div style={{ pointerEvents: 'none' }}>
                                         <img
                                             src={item.imageData}
-                                            style={{ width: '100%', height: 'auto', display: 'block', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
+                                            style={{
+                                                width: '100%',
+                                                height: 'auto',
+                                                display: 'block',
+                                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))',
+                                                border: '2px solid #fff',
+                                                borderRadius: '4px',
+                                                background: '#fff',
+                                                boxShadow: '0 0 0 1px rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.1)'
+                                            }}
                                             draggable={false}
                                         />
                                     </div>

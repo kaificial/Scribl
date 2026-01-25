@@ -145,14 +145,21 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                 className="draggable-content-wrapper"
                 style={{
                     position: 'relative',
-                    border: (isSelected && !element.frame && !element.msgStyle) ? '1px dashed #4b89dc' : '1px solid transparent',
+                    border: (element.type === 'text' && !element.msgStyle) ? '1px solid rgba(0,0,0,0.08)' : ((isSelected && !element.frame && !element.msgStyle) ? '1px dashed #4b89dc' : '1px solid transparent'),
+                    background: (element.type === 'text' && !element.msgStyle) ? '#fff' : 'transparent',
+                    boxShadow: (element.type === 'text' && !element.msgStyle) ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
                     padding: 0,
                     height: '100%',
-                    borderRadius: (element.msgStyle === 'modern') ? 12 : 4,
-                    transition: 'border-color 0.2s',
+                    borderRadius: (element.msgStyle === 'modern') ? 12 : 8,
+                    transition: 'all 0.2s',
                     overflow: 'visible'
                 }}
             >
+                {/* Real DOM elements for frames/styles (replaces pseudo-elements for html2canvas support) */}
+                {element.frame === 'polaroid' && <div className="frame-polaroid-texture" />}
+                {element.frame === 'tape' && <div className="frame-tape-piece" />}
+                {element.msgStyle === 'sticky' && <div className="msg-style-sticky-corner" />}
+
                 {/* Hover Move Handles (on edges) */}
                 <div data-html2canvas-ignore className="hover-move-handle top" style={{ position: 'absolute', top: -10, left: 0, right: 0, height: 20, cursor: 'move', zIndex: 1 }} />
                 <div data-html2canvas-ignore className="hover-move-handle bottom" style={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 20, cursor: 'move', zIndex: 1 }} />
@@ -275,7 +282,15 @@ const DraggableElement = ({ element, updateElement, removeElement, isSelected, o
                         <img
                             src={element.src}
                             alt="sticker"
-                            style={{ width: '100%', height: 'auto', display: 'block' }}
+                            style={{
+                                width: '100%',
+                                height: 'auto',
+                                display: 'block',
+                                border: element.frame ? 'none' : '2px solid #fff',
+                                borderRadius: element.frame ? '2px' : '4px',
+                                background: element.frame ? 'transparent' : '#fff',
+                                boxShadow: element.frame ? 'none' : '0 0 0 1px rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.1)'
+                            }}
                             draggable={false}
                         />
                     )}
@@ -948,8 +963,8 @@ export default function WriteMessage() {
                         borderRadius: 30,
                         position: 'relative',
                         overflow: 'hidden',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.04)',
-                        border: '1px solid rgba(0,0,0,0.02)',
+                        boxShadow: '0 10px 60px rgba(0,0,0,0.05)',
+                        border: '2px solid rgba(0,0,0,0.08)',
                         cursor: getCursor()
                     }}
                     onClick={() => activeTool === 'select' && setSelectedId(null)}

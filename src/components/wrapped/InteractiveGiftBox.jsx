@@ -47,7 +47,6 @@ export default function InteractiveGiftBox({ isActive, customTitle, customSubtit
         })
     };
 
-    if (!isActive) return null;
 
     return (
         <div style={{
